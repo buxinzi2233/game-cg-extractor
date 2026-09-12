@@ -8,6 +8,11 @@ scratch/
 test_workspace/
 unpacked_assets/
 
+# Compiled external binaries in bin/ (keep bms scripts & .gitkeep)
+bin/*
+!bin/.gitkeep
+!bin/*.bms
+
 # OS generated files
 .DS_Store
 Thumbs.db

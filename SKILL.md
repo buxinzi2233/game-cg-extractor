@@ -40,19 +40,27 @@ python3 scripts/probe_archive.py "<target_file_or_dir>"
 1. **检索本地经验库**：
    查看 `references/recipes.json`，检查是否有匹配的 `magic_bytes` 或 `extensions`。
    - 若匹配：直接获取其中的 `tool`、`command_template` 或开源方案执行解包。
-2. **本地未命中 -> 优先全网搜轮子（强制）**：
-   调用 `search_web` 工具，严禁擅自编写逆向代码。按以下优先级搜索社区成熟解法：
-   - 搜索式 1：`"<extension>" quickbms script` 或 `aluigi "<extension>" bms`
-   - 搜索式 2：`"<game_name>" or "<engine_name>" extract unpacker github`
-   - 搜索式 3：`"asmodean" "<extension>"` 或 `"garbro" "<extension>"` 或 `"rpatool"`
-   - 若搜索到现成开源工具（如 GitHub 上的 Python 仓库、BMS 脚本），优先拉取或安装并在沙箱工作区内执行。
-3. **兜底启发式推导（仅在全网无任何结果时）**：
+2. **本地未命中 -> 优先全网搜轮子（强制免弹窗规范）**：
+   - **必须且只能调用反重力原生 `search_web` 工具**，严禁在命令行中通过 Python/curl 自写网络爬虫请求（避免触发网络沙箱弹窗）。
+   - 按以下优先级搜索社区成熟解法：
+     - 搜索式 1：`"<extension>" quickbms script` 或 `aluigi "<extension>" bms`
+     - 搜索式 2：`"<game_name>" or "<engine_name>" extract unpacker github`
+     - 搜索式 3：`"asmodean" "<extension>"` 或 `"garbro" "<extension>"` 或 `"rpatool"`
+3. **外部工具持久化存放至技能自身 `bin/` 目录**：
+   - 若需下载 GitHub 工具、QuickBMS 预编译程序或 `.bms` 脚本，**必须统一持久化存放至技能自身的 `bin/` 目录下**（绝对路径：`~/.gemini/config/skills/game-cg-extractor/bin/`）。
+   - 严禁放置在带有随机会话 UUID 的临时缓存路径中。
+   - 路径恒定后，用户只需在首次运行时授权一次，后续在所有对话中永久白名单放行！
+4. **兜底启发式推导（仅在全网无任何结果时）**：
    参照 `references/heuristics_guide.md`，尝试通用 zlib 流解压（`offzip` 或 Python `zlib.decompressobj`）、单字节/双字节 XOR 掩码破解、或文件头偏移表逆向。
 
 ---
 
 ### 阶段 3：执行批量解包 (Unpacking)
 
+- **命令形状与路径铁律**：
+  - **严禁使用 `cd <dir> && ...`** 复合命令（避免破坏系统白名单匹配）。
+  - 执行命令时，工具和文件均采用固定/绝对路径，例如：
+    `~/.gemini/config/skills/game-cg-extractor/bin/quickbms -l ~/.gemini/config/skills/game-cg-extractor/bin/kirikiri2.bms "/path/to/game/data.xp3"`
 - 将解包输出严格限定在项目工作区：
   `OUTPUT_DIR="${PROJECT_WORKSPACE}/unpacked_assets/<game_name>/raw_extracted"`
 - 记录解包过程中的日志。若遇报错，自动分析报错原因（如编码问题、加密密钥）并自动切换方案，不要中断请示。
