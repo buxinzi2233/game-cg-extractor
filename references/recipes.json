@@ -127,5 +127,19 @@
     "source_url": "https://aluigi.altervista.org/quickbms.htm",
     "command_template": "offzip -a -1 {input_file} {output_dir} 0",
     "notes": "可使用 offzip 暴力探测并释放所有内嵌的 zlib 压缩块，常用于无特殊加密的自定义 pak 封包"
+  },
+  {
+    "engine": "Kirikiri_HibikiWorks",
+    "signature": {
+      "extensions": [".xp3"],
+      "magic_bytes": "5850330D0A",
+      "magic_ascii": "XP3"
+    },
+    "description": "吉里吉里 2 (Kirikiri 2) - hibiki works 作品加密封包 (LOVELY×CATION, PRETTY×CATION 等)",
+    "tool": "HibikiCrypt + tlg2png",
+    "tool_type": "custom_crypt",
+    "source_url": "https://github.com/buxinzi2233/game-cg-extractor",
+    "command_template": "python3 ~/.gemini/config/skills/game-cg-extractor/bin/extract_hibiki_xp3.py {input_file} -o {output_dir}",
+    "notes": "封包条目 flags & 0x80000000 启用 HibikiCrypt (Adler32 动态双字节异或: key1=adlr>>5, key2=adlr>>8, 周期4字节交替); 图像采用 TLG0 容器包裹，魔数混淆为 XXXYYY (TLG5) 或 XXXZZZ (TLG6)，需对特定偏移反异或 0xAB/0xAC 恢复后用 tlg2png 转换为标准无损 PNG"
   }
 ]
