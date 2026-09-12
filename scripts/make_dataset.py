@@ -83,7 +83,11 @@ def process_category(src_cat_dir: Path, dst_cat_dir: Path):
         for img in root_imgs:
             stem = img.stem
             match = re.match(r"^(.*?)[_\-#\s]+[0-9a-zA-Z]+$", stem)
-            prefix = match.group(1) if match else stem
+            if match and len(match.group(1)) >= 2:
+                prefix = match.group(1)
+            else:
+                match_cg = re.match(r"^([a-zA-Z]+\d+)[a-zA-Z]+$", stem)
+                prefix = match_cg.group(1) if match_cg and len(match_cg.group(1)) >= 2 else stem
             clusters.setdefault(prefix, []).append(img)
 
         for prefix, imgs in clusters.items():

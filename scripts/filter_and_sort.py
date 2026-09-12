@@ -92,12 +92,16 @@ def get_image_size(file_path: Path):
     return None, "UNKNOWN"
 
 def detect_diff_group(filename: str):
-    """识别同一场景/事件的差分前缀 (例如 ev01_01 -> ev01, alice_pose1_a -> alice_pose1)"""
+    """识别同一场景/事件的差分前缀 (例如 ev01_01 -> ev01, ev101a -> ev101, alice_pose1_a -> alice_pose1)"""
     name_no_ext = Path(filename).stem
-    # 匹配末尾数字序号或字母变体 (如 _01, _a, -1, #2)
+    # 1. 匹配带分隔符序号或字母变体 (如 _01, _a, -1, #2)
     match = re.match(r"^(.*?)[_\-#\s]+[0-9a-zA-Z]+$", name_no_ext)
     if match and len(match.group(1)) >= 2:
         return match.group(1)
+    # 2. 匹配紧凑型CG命名规则 (如 ev101a -> ev101, cg01b -> cg01)
+    match_cg = re.match(r"^([a-zA-Z]+\d+)[a-zA-Z]+$", name_no_ext)
+    if match_cg and len(match_cg.group(1)) >= 2:
+        return match_cg.group(1)
     return None
 
 def main():

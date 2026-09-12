@@ -30,6 +30,20 @@
     "notes": "若 xp3 带有游戏专属加密滤镜 (CXFilter / TVPFilter)，优先在 GitHub 搜索该游戏的专属 xp3 提取脚本"
   },
   {
+    "engine": "Kirikiri_HibikiWorks",
+    "signature": {
+      "extensions": [".xp3"],
+      "magic_bytes": "5850330D0A",
+      "magic_ascii": "XP3"
+    },
+    "description": "吉里吉里 (Kirikiri 2) - hibiki works 作品加密封包 (LOVELY×CATION, PRETTY×CATION 等)",
+    "tool": "HibikiCrypt + tlg2png",
+    "tool_type": "custom_crypt",
+    "source_url": "https://github.com/morkt/GARbro",
+    "command_template": "python3 extract_hibiki_xp3.py {input_file} -o {output_dir}",
+    "notes": "封包文件 flags & 0x80000000 启用 HibikiCrypt (Adler32 动态双字节异或: key1=adlr>>5, key2=adlr>>8, 周期4字节交替); 图像采用 TLG0 容器包裹，魔数混淆为 XXXYYY (TLG5) 或 XXXZZZ (TLG6)，需对特定偏移反异或 0xAB/0xAC 恢复后用 tlg2png 转换为标准无损 PNG"
+  },
+  {
     "engine": "Unity",
     "signature": {
       "extensions": [".bundle", ".assets", ".unity3d", ".bytes"],
