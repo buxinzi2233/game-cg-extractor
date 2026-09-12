@@ -87,11 +87,14 @@ def main():
         print(f"[-] Directory not found: {sorted_dir}")
         sys.exit(1)
 
-    categories = ["CG_Events", "Sprites", "UI_Icons", "Thumbnails"]
+    categories = ["Backgrounds", "CG_Events", "Sprites", "UI_System", "Thumbnails"]
     sample_manifest = {}
 
     for cat in categories:
         cat_path = sorted_dir / cat
+        if not cat_path.exists() and cat == "UI_System":
+            cat_path = sorted_dir / "UI_Icons"
+
         candidates = pick_candidates_for_dir(cat_path, max_picks=5)
         sample_manifest[cat] = {
             "total_candidates": len(candidates),

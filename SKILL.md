@@ -75,12 +75,15 @@ python3 scripts/filter_and_sort.py \
   --input-dir "${OUTPUT_DIR}" \
   --output-dir "${PROJECT_WORKSPACE}/unpacked_assets/<game_name>/sorted"
 ```
-**分流标准（100% 完整保留所有资产）**：
-- `CG_Events/`：全屏剧情 CG、场景大图（大尺寸宽屏），根据命名规则（如 `ev01_01.png`, `ev01_02.png`）自动将同事件差分归并至独立子目录。
-- `Sprites/`：人物立绘（带有透明通道的大图、立绘组合图层）。
-- `UI_Icons/`：界面按钮、对话框、系统小图标、字体贴图等杂图。
-- `Thumbnails/`：缩略图、鉴赏界面预览小图。
-- `Audio/` 与 `Others/`：音效、BGM 或非图像数据。
+**分流标准（100% 完整保留所有资产，严格遵循“零碎片文件夹”铁律）**：
+- `CG_Events/`：全屏剧情 CG，按角色大类直接平铺归整。**内部绝不创建微型碎片子文件夹**，直接平铺便于直观浏览与批量选用。
+- `Backgrounds/`：场景背景独立剥离建档，与剧情 CG 彻底解耦。
+- `Sprites/`：人物立绘（全身完整大图），按角色直接平铺归档。
+  - `Sprite_Parts/`：自动隔离收纳 `<400px` 的眼部、唇部局部表情切片与眨眼条，不污染全身立绘视图。
+- `UI_System/`：界面按钮、对话框、系统框架、CG裁切特写小图。
+- `Thumbnails/`：鉴赏界面预览缩略图。
+- `Audio/`：BGM、SE、Voice、Call_Voice 自动分类。
+- `Others/`：非媒体的脚本与数据文件。
 
 ---
 
@@ -92,11 +95,15 @@ python3 scripts/make_dataset.py \
   --input-dir "${PROJECT_WORKSPACE}/unpacked_assets/<game_name>/sorted" \
   --output-dir "${PROJECT_WORKSPACE}/unpacked_assets/<game_name>/curated_dataset"
 ```
-**智能降采样规则**：
-- 针对 `CG_Events` 与 `Sprites` 的同场景/同角色差分聚类：
-  - 若差分图较多（>= 4 张）：依据变体编号/命名差异，仅挑选**差异最大的最多 2 张**（如首张基础表情与尾张剧烈动作/表情差分）。
-  - 若差分图适中（2~3 张）：保留 **2~3 张**。
-  - 独立图直接保留。
+**智能精炼降采样与去重规则**：
+- **立绘多重缩放去重 (Multi-Zoom Deduplication)**：
+  - 针对带有远景/中景/近景（Near/Mid/Far）多重缩放的立绘，自动聚类并**仅保留高度最大的一张原生特写高清大图**，彻底杜绝单纯分辨率差异的重复。
+- **高反差差分极值采样**：
+  - 针对同一事件/同一动作的差分序列：
+    - 若差分较多（>= 4 张）：依据变体编号/命名差异，仅挑选**差异最大的最多 2 张**（起手基底 + 最终高潮），杜绝微小表情冗余。
+    - 若差分适中（2~3 张）：保留 **2~3 张**。
+    - 独立图 100% 保留。
+- **全平面零碎片子目录**：精炼产物在各角色大类下直接平铺，无嵌套文件夹。
 
 ---
 
