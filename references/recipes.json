@@ -1,0 +1,117 @@
+[
+  {
+    "engine": "RenPy",
+    "signature": {
+      "extensions": [".rpa", ".rpi"],
+      "magic_bytes": "5250412D",
+      "magic_ascii": "RPA-"
+    },
+    "description": "Ren'Py 视觉小说引擎归档封包",
+    "tool": "rpatool",
+    "tool_type": "python_cli",
+    "source_url": "https://github.com/Shizmob/rpatool",
+    "install_cmd": "pip install rpatool",
+    "command_template": "rpatool -x {input_file} -o {output_dir}",
+    "notes": "Ren'Py 官方与社区标准工具，解包后资源通常位于 images/ 或 game/ 目录，无需解密"
+  },
+  {
+    "engine": "Kirikiri_KAG",
+    "signature": {
+      "extensions": [".xp3"],
+      "magic_bytes": "5850330D0A",
+      "magic_ascii": "XP3"
+    },
+    "description": "吉里吉里 (Kirikiri / KAG) 引擎封包",
+    "tool": "garbro / quickbms",
+    "tool_type": "community_tool",
+    "source_url": "https://github.com/morkt/GARbro",
+    "fallback_bms_url": "https://aluigi.altervista.org/bms/kirikiri2.bms",
+    "command_template": "garbro -e {input_file} -d {output_dir} || quickbms kirikiri2.bms {input_file} {output_dir}",
+    "notes": "若 xp3 带有游戏专属加密滤镜 (CXFilter / TVPFilter)，优先在 GitHub 搜索该游戏的专属 xp3 提取脚本"
+  },
+  {
+    "engine": "Unity",
+    "signature": {
+      "extensions": [".bundle", ".assets", ".unity3d", ".bytes"],
+      "magic_bytes": "556E697479",
+      "magic_ascii": "UnityFS"
+    },
+    "description": "Unity 引擎 AssetBundle 封包",
+    "tool": "UnityPy / AssetStudioCLI",
+    "tool_type": "python_cli",
+    "source_url": "https://github.com/K0lb3/UnityPy",
+    "install_cmd": "pip install UnityPy",
+    "command_template": "python3 -c \"import UnityPy, sys, os; env = UnityPy.load('{input_file}'); [obj.read().image.save(os.path.join('{output_dir}', f'{obj.name}.png')) for obj in env.objects if obj.type.name in ['Texture2D', 'Sprite']]\"",
+    "notes": "跨平台首选 UnityPy，支持直接纯 Python 提取 Texture2D 与 Sprite，无需 Mono 运行时"
+  },
+  {
+    "engine": "CatSystem2",
+    "signature": {
+      "extensions": [".int"],
+      "magic_bytes": "4B494600",
+      "magic_ascii": "KIF\\x00"
+    },
+    "description": "CatSystem2 (CS2) 引擎封包 (如魔女的夜宴、千恋万花等柚子社作品)",
+    "tool": "garbro / cs2_decompress",
+    "tool_type": "community_tool",
+    "source_url": "https://github.com/asmodean/asmodean_tools",
+    "command_template": "garbro -e {input_file} -d {output_dir}",
+    "notes": "内部常包含 HG2/HG3 格式图像，GARbro 或 asmodean 的 exkifint 可自动解出并转换为标准 PNG"
+  },
+  {
+    "engine": "RPGMaker_RGSS",
+    "signature": {
+      "extensions": [".rgss3a", ".rgss2a", ".rgssad"],
+      "magic_bytes": "524753534144",
+      "magic_ascii": "RGSSAD"
+    },
+    "description": "RPG Maker XP / VX / VX Ace 归档封包",
+    "tool": "rgss_extract / quickbms",
+    "tool_type": "community_tool",
+    "source_url": "https://aluigi.altervista.org/bms/rpg_maker.bms",
+    "command_template": "quickbms rpg_maker.bms {input_file} {output_dir}",
+    "notes": "采用基于固定 Magic 与递增 Key 的简单异或加密，纯 Python 脚本亦可秒级解开"
+  },
+  {
+    "engine": "WolfRPG",
+    "signature": {
+      "extensions": [".wolf", ".dat"],
+      "magic_bytes": "0000576F6C66",
+      "magic_ascii": "\\x00\\x00Wolf"
+    },
+    "description": "WOLF RPG 制作大师封包",
+    "tool": "wolf-extractor / DXArchive",
+    "tool_type": "community_tool",
+    "source_url": "https://github.com/cremno/wolf-extract",
+    "command_template": "wolf-extract {input_file} -o {output_dir}",
+    "notes": "注意检查 Wolf RPG 版本密钥，若默认 key 解包乱码，可在 GitHub 搜索该作品特定密钥"
+  },
+  {
+    "engine": "Majiro",
+    "signature": {
+      "extensions": [".arc", ".mjd"],
+      "magic_bytes": "4D616A69726F",
+      "magic_ascii": "MajiroObjX"
+    },
+    "description": "Majiro 引擎封包",
+    "tool": "majiro-tools",
+    "tool_type": "community_tool",
+    "source_url": "https://github.com/AtomCrafty/majiro-tools",
+    "command_template": "majiro-arc -x {input_file} -o {output_dir}",
+    "notes": "解包出的 rc8 图片可用配套工具转码成 PNG"
+  },
+  {
+    "engine": "Universal_Zlib_Stream",
+    "signature": {
+      "extensions": [".dat", ".bin", ".pak"],
+      "magic_bytes": "789C",
+      "magic_ascii": "x\\x9c"
+    },
+    "description": "通用标准 Deflate / Zlib 压缩数据流",
+    "tool": "offzip / python_zlib",
+    "tool_type": "universal_heuristic",
+    "source_url": "https://aluigi.altervista.org/quickbms.htm",
+    "command_template": "offzip -a -1 {input_file} {output_dir} 0",
+    "notes": "可使用 offzip 暴力探测并释放所有内嵌的 zlib 压缩块，常用于无特殊加密的自定义 pak 封包"
+  }
+]
