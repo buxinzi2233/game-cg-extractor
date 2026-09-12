@@ -20,7 +20,26 @@ import re
 import shutil
 import hashlib
 import argparse
+import struct
 from pathlib import Path
+
+try:
+    from PIL import Image
+    def get_img_height(p: Path):
+        with Image.open(p) as im:
+            return im.size[1]
+except Exception:
+    def get_img_height(p: Path):
+        try:
+            with open(p, "rb") as f:
+                head = f.read(32)
+                if head.startswith(b"\x89PNG\r\n\x1a\n"):
+                    return struct.unpack(">II", head[16:24])[1]
+                if head.startswith(b"BM"):
+                    return abs(struct.unpack("<ii", head[18:26])[1])
+        except Exception:
+            pass
+        return p.stat().st_size
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 
@@ -113,19 +132,43 @@ def curate_sprites_category(src_cat_dir: Path, dst_cat_dir: Path):
         imgs = [f for f in cdir.glob("*.png")]
         total_raw += len(imgs)
 
-        # 按姿势系列分组 (如 st01aaa, st01aab)
-        pose_groups = {}
-        for img in imgs:
-            m = re.match(r"^(st\d{2}[a-z]{3})", img.stem.lower())
-            pose_id = m.group(1) if m else img.stem[:6]
-            pose_groups.setdefault(pose_id, []).append(img)
+        # 分类处理：Kirikiri/HibikiWorks 远中近缩放规范 vs 通用立绘姿势组
+        kk_zoom_groups = {}
+        generic_groups = {}
 
-        for pose_id, p_imgs in pose_groups.items():
+        for img in imgs:
+            stem = img.stem.lower()
+            m = re.match(r"^(st\d{2})([a-z])([a-z])([a-z])(\d{2})$", stem)
+            if m:
+                # Kirikiri 命名: st[角色2位][姿势1位][距离1位][服装1位][切片2位]
+                # 忽略位置 3 的距离代码 (a/b/c)，按 (角色, 姿势, 服装变体) 聚类
+                key = (m.group(1), m.group(2), m.group(4))
+                kk_zoom_groups.setdefault(key, []).append(img)
+            else:
+                # 通用立绘分组 (例如 alice_stand_01, char_a_01)
+                m_gen = re.match(r"^(st\d{2}[a-z]{2})", stem)
+                if m_gen:
+                    pose_id = m_gen.group(1)
+                elif "_" in stem:
+                    pose_id = stem.rsplit("_", 1)[0]
+                else:
+                    pose_id = stem[:6]
+                generic_groups.setdefault(pose_id, []).append(img)
+
+        # 1. 处理 Kirikiri 远中近缩放组: 从 a(近景)/b(中景)/c(远景) 中仅挑选单张最高清原生大图！
+        for key, p_imgs in kk_zoom_groups.items():
+            best_img = max(p_imgs, key=get_img_height)
+            total_curated += 1
+            shutil.copy2(best_img, target_char_dst / best_img.name)
+
+        # 2. 处理通用立绘组: 姿势差分多于4张保留首尾2张代表，少于4张全保留
+        for pose_id, p_imgs in generic_groups.items():
             sorted_imgs = sorted(p_imgs, key=lambda p: p.name)
-            # 每个姿势组精选 1~2 张全身大图代表
-            selected = [sorted_imgs[0]]
-            if len(sorted_imgs) > 1:
-                selected.append(sorted_imgs[-1])
+            n = len(sorted_imgs)
+            if n >= 4:
+                selected = [sorted_imgs[0], sorted_imgs[-1]]
+            else:
+                selected = sorted_imgs
 
             total_curated += len(selected)
             for sel in selected:
