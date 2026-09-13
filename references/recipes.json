@@ -32,17 +32,18 @@
   {
     "engine": "Unity",
     "signature": {
-      "extensions": [".bundle", ".assets", ".unity3d", ".bytes"],
+      "extensions": [".bundle", ".assets", ".unity3d", ".bytes", ".resS"],
       "magic_bytes": "556E697479",
       "magic_ascii": "UnityFS"
     },
-    "description": "Unity 引擎 AssetBundle 封包",
-    "tool": "UnityPy / AssetStudioCLI",
-    "tool_type": "python_cli",
-    "source_url": "https://github.com/K0lb3/UnityPy",
+    "description": "Unity 引擎 AssetBundle / .assets 资产封包",
+    "tool": "AssetStudio / UnityPy",
+    "tool_type": "gui_and_cli",
+    "source_url": "https://github.com/Perfare/AssetStudio",
+    "cli_url": "https://github.com/lzls/AssetStudioCLI",
     "install_cmd": "pip install UnityPy",
-    "command_template": "python3 -c \"import UnityPy, sys, os; env = UnityPy.load('{input_file}'); [obj.read().image.save(os.path.join('{output_dir}', f'{obj.name}.png')) for obj in env.objects if obj.type.name in ['Texture2D', 'Sprite']]\"",
-    "notes": "跨平台首选 UnityPy，支持直接纯 Python 提取 Texture2D 与 Sprite，无需 Mono 运行时"
+    "command_template": "AssetStudioCLI {input_file} -o {output_dir} --type Texture2D,Sprite || python3 -c \"import UnityPy, sys, os; env = UnityPy.load('{input_file}'); [obj.read().image.save(os.path.join('{output_dir}', f'{obj.name}.png')) for obj in env.objects if obj.type.name in ['Texture2D', 'Sprite']]\"",
+    "notes": "Unity 资产提取行业标准方案：推荐首选 AssetStudio (功能最强大的可视化资源浏览器与导出器，支持 Texture2D/Sprite/AudioClip 批量导出；命令行脚本化推荐 AssetStudioCLI)；纯 Python 跨平台无依赖环境可选 UnityPy"
   },
   {
     "engine": "CatSystem2",

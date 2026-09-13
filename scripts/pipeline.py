@@ -136,8 +136,24 @@ def extract_single_archive(archive_path: Path, raw_dest_dir: Path) -> tuple[int,
         except Exception as e:
             print(f"[-] extract_hibiki_xp3 failed: {e}")
 
-    # 3. Unity AssetBundle
-    if head.startswith(b"UnityFS") or ext in (".bundle", ".assets"):
+    # 3. Unity AssetBundle / Assets (优先 AssetStudioCLI，纯 Python UnityPy 兜底)
+    if head.startswith(b"UnityFS") or ext in (".bundle", ".assets", ".unity3d"):
+        asset_studio_cli = BIN_DIR / "AssetStudioCLI"
+        if not asset_studio_cli.exists():
+            found_cli = shutil.which("AssetStudioCLI")
+            if found_cli:
+                asset_studio_cli = Path(found_cli)
+        if asset_studio_cli.exists():
+            try:
+                cmd = [str(asset_studio_cli), str(archive_path), "-o", str(raw_dest_dir), "--type", "Texture2D,Sprite"]
+                res = subprocess.run(cmd, capture_output=True, text=True)
+                if res.returncode == 0:
+                    imgs = list(raw_dest_dir.glob("*.png"))
+                    if imgs:
+                        return len(imgs), 0
+            except Exception as e:
+                print(f"[-] AssetStudioCLI execution failed: {e}")
+
         try:
             import UnityPy
             env = UnityPy.load(str(archive_path))

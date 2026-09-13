@@ -13,7 +13,7 @@
 ## ✨ 核心特性
 
 - 🤖 **免打扰自主执行**：建立明确的安全边界与自主权规则，遇到报错自行分析重试与方案降级，彻底告别每步反复提问确认。
-- 🔍 **优先全网搜成熟轮子（拒绝重复造轮子）**：当本地经验未命中时，强制优先使用 `search_web` 搜索社区成熟的 QuickBMS 脚本或 GitHub 开源提取器（如 `rpatool`, `UnityPy`, `asmodean` 工具集）。
+- 🔍 **优先全网搜成熟轮子（拒绝重复造轮子）**：当本地经验未命中时，强制优先使用 `search_web` 搜索社区成熟的 QuickBMS 脚本或 GitHub 开源提取器（如 `AssetStudio`, `rpatool`, `UnityPy`, `asmodean` 工具集）。
 - 📂 **全量资产 100% 保留与智能分流**：绝不粗暴丢弃小图与图标。自动分流为 `CG_Events`（全屏剧情CG/同场景差分聚合）、`Sprites`（人物立绘）、`UI_Icons`（界面图标/杂图）、`Thumbnails`（缩略预览图）、`Audio`（音效/BGM）。
 - 🎨 **精选 AI 训练集制作（`curated_dataset/`）**：针对同场景/角色差分过多的痛点，智能计算差异距离：
   - 差分多时（>=4 张）仅保留差异最大的首尾最多 2 张，有效避免数据冗余；
@@ -30,7 +30,7 @@
 | :--- | :--- | :--- | :--- |
 | **Ren'Py** | `.rpa`, `.rpi` | `52 50 41 2D` (`RPA-`) | `rpatool` (Python 开源库) |
 | **吉里吉里 (Kirikiri / KAG)** | `.xp3` | `58 50 33 0D 0A` (`XP3`) | `garbro` / `quickbms kirikiri2.bms` |
-| **Unity 引擎** | `.bundle`, `.assets` | `55 6E 69 74 79` (`UnityFS`) | `UnityPy` (纯 Python 跨平台提取) |
+| **Unity 引擎** | `.bundle`, `.assets`, `.unity3d` | `55 6E 69 74 79` (`UnityFS`) | **`AssetStudio`** (官方推荐主力工具) / `UnityPy` (纯 Python 跨平台) |
 | **CatSystem2 (CS2 / 柚子社等)** | `.int` | `4B 49 46 00` (`KIF\0`) | `garbro` / `asmodean exkifint` |
 | **RPG Maker (XP/VX/Ace)** | `.rgss3a`, `.rgssad` | `52 47 53 53 41 44` (`RGSSAD`) | `quickbms rpg_maker.bms` |
 | **Wolf RPG 制作大师** | `.wolf`, `.dat` | `00 00 57 6F 6C 66` (`Wolf`) | `wolf-extract` |

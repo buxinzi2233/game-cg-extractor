@@ -28,7 +28,7 @@ description: "Automated game asset inspection, CG unpacking, community tool sear
    - **严禁在命令行自写 curl/python 爬虫**：检索社区开源工具必须且只能调用反重力原生 `search_web` 和 `read_url_content` 工具（原生 Agent 工具无需沙箱审批，体验极佳）。
 
 3. **外部工具持久化存放至技能自身 `bin/` 目录**：
-   - 若需下载 GitHub 工具、QuickBMS 预编译程序或 `.bms` 脚本，**必须统一持久化存放至技能自身的 `bin/` 目录下**（绝对路径：`~/.gemini/config/skills/game-cg-extractor/bin/`）。
+   - 若需下载 GitHub 工具、AssetStudio (AssetStudioCLI)、QuickBMS 预编译程序或 `.bms` 脚本，**必须统一持久化存放至技能自身的 `bin/` 目录下**（绝对路径：`~/.gemini/config/skills/game-cg-extractor/bin/`）。
    - 路径固定后，用户只需在首次运行时授权一次，后续在所有对话中永久白名单放行！严禁保存在随机会话 UUID 的临时缓存路径中。
 
 4. **工作区安全隔离与零碎片文件夹铁律**：
@@ -57,7 +57,7 @@ python3 ~/.gemini/config/skills/game-cg-extractor/scripts/pipeline.py \
 
 **流水线内部自动执行 5 大核心阶段**：
 - **阶段 1 (嗅探)**：自动探测输入封包（`.xp3`, `.rpa`, `.bundle`, `.int`, `.pak` 等），解析 Magic Hex 与香农熵，并自动对比 `recipes.json` 候选引擎。
-- **阶段 2 (解包)**：自动按源封包名称分区建档（如 `raw_extracted/<archive_name>/`），自动调用内置多线程引擎（如 HibikiWorks XP3、RenPy RPA、UnityPy 或 bin/ 工具）解包并转码无损 PNG。
+- **阶段 2 (解包)**：自动按源封包名称分区建档（如 `raw_extracted/<archive_name>/`），自动调用内置多线程引擎（如 HibikiWorks XP3、RenPy RPA、Unity AssetStudioCLI/UnityPy 或 bin/ 工具）解包并转码无损 PNG。
 - **阶段 3 (分流)**：通用角色识别引擎（支持 1~N 任意角色数量，支持 recipes.json 沉淀名称），自动将全量资产分流至：
   - `CG_Events/<Character>/`（无微型子目录，直接平铺）
   - `Backgrounds/`（独立场景壁纸）
