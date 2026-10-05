@@ -43,7 +43,47 @@
     "cli_url": "https://github.com/lzls/AssetStudioCLI",
     "install_cmd": "pip install UnityPy",
     "command_template": "AssetStudioCLI {input_file} -o {output_dir} --type Texture2D,Sprite || python3 -c \"import UnityPy, sys, os; env = UnityPy.load('{input_file}'); [obj.read().image.save(os.path.join('{output_dir}', f'{obj.name}.png')) for obj in env.objects if obj.type.name in ['Texture2D', 'Sprite']]\"",
-    "notes": "Unity 资产提取行业标准方案：推荐首选 AssetStudio (功能最强大的可视化资源浏览器与导出器，支持 Texture2D/Sprite/AudioClip 批量导出；命令行脚本化推荐 AssetStudioCLI)；纯 Python 跨平台无依赖环境可选 UnityPy"
+    "notes": "Unity 资产提取行业标准方案：推荐首选 AssetStudio (功能最强大的可视化资源浏览器与导出器，支持 Texture2D/Sprite/AudioClip 批量导出；命令行脚本化推荐 AssetStudioCLI)；纯 Python 跨平台无依赖环境可选 UnityPy",
+    "known_games": {
+      "Miss_Neko_3": {
+        "title": "Miss Neko 3",
+        "characters": {
+          "01": "01_加菲猫 (Jiafei)",
+          "02": "02_安吉拉 (Angela)",
+          "03": "03_埃及猫 (Aijimao)",
+          "04": "04_柯尼斯 (Kenisi)",
+          "05": "05_日本短尾猫 (Ribenduanwei)",
+          "06": "06_折耳猫 (Zheer)",
+          "07": "07_无毛猫 (Wumaomao)",
+          "08": "08_暹罗猫 (Xianluo)",
+          "09": "09_孟加拉猫 (Mengjiala)"
+        },
+        "character_aliases": {
+          "jf": "01",
+          "jiafei": "01",
+          "agl": "02",
+          "angela": "02",
+          "turkishangora": "02",
+          "aj": "03",
+          "ajm": "03",
+          "aijimao": "03",
+          "kns": "04",
+          "kenisi": "04",
+          "rb": "05",
+          "rbdw": "05",
+          "ribenduanwei": "05",
+          "japanesebobtail": "05",
+          "ze": "06",
+          "zheer": "06",
+          "wm": "07",
+          "wumaomao": "07",
+          "xl": "08",
+          "xianluo": "08",
+          "mjl": "09",
+          "mengjiala": "09"
+        }
+      }
+    }
   },
   {
     "engine": "CatSystem2",

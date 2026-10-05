@@ -103,6 +103,7 @@ class UniversalCharacterClassifier:
         self.game_name = game_name
         self.input_dir = input_dir
         self.recipes_char_map = {}
+        self.character_aliases = {}
         self._load_recipes_preset()
         self._auto_discover_from_dir()
 
@@ -125,7 +126,9 @@ class UniversalCharacterClassifier:
                     if matched:
                         chars = g_val.get("characters", {})
                         self.recipes_char_map.update(chars)
-                        print(f"[*] Loaded character presets from recipes.json for game [{g_key}]: {len(chars)} characters")
+                        aliases = g_val.get("character_aliases", {})
+                        self.character_aliases.update(aliases)
+                        print(f"[*] Loaded character presets from recipes.json for game [{g_key}]: {len(chars)} characters, {len(aliases)} aliases")
                         break
         except Exception as e:
             sys.stderr.write(f"Warning: Failed to load recipe presets: {e}\n")
@@ -186,6 +189,14 @@ class UniversalCharacterClassifier:
                       or stem_lower in ("ev0", "cg0")):
             return "Common_Others"
 
+        # 0. 角色别名缩写匹配 (jf, agl, aj, kns, rb, ze, wm, xl, mjl 等)
+        for alias, cid_val in self.character_aliases.items():
+            if re.search(rf"(?:^|[_\-]){re.escape(alias)}(?:[_\-0-9c]|anime|$)", stem_lower):
+                try:
+                    return self.format_character_name(int(cid_val), alias)
+                except ValueError:
+                    return self.format_character_name(0, cid_val)
+
         # 1. 已知映射词条反向匹配
         all_maps = {**self.recipes_char_map, **self.char_map}
         for k, v in all_maps.items():
@@ -212,6 +223,12 @@ class UniversalCharacterClassifier:
         if m_stand2:
             return self.format_character_name(0, m_stand2.group(1))
 
+        # 场景过渡/事件变更特征识别 (c-1, c-2, change-4, change-9)
+        m_change = re.match(r"^(?:c|change)[_\-](\d{1,2})(?:[_\-a-z0-9]|$)", stem_lower)
+        if m_change:
+            cid = int(m_change.group(1))
+            return self.format_character_name(cid)
+
         # 4. 事件 CG 特征识别 (绝不设定 1~4 上限！支持任意角色编号)
         # 模式 A: ev101, ev501, ev801, ev1201 (ev/cg + 角色编号1~2位 + 事件编号2位)
         m_ev_num = re.match(r"^(?:ev|cg)(\d{1,2})(\d{2})", stem_lower)
@@ -221,8 +238,8 @@ class UniversalCharacterClassifier:
                 return "Common_Others"
             return self.format_character_name(cid)
 
-        # 模式 B: ev01_01, ev05_01, ev01a, ev05a (ev/cg + 角色编号1~2位 + 符号或变体字母)
-        m_ev_prefix = re.match(r"^(?:ev|cg)(\d{1,2})[_\-a-z]", stem_lower)
+        # 模式 B: ev01_01, cg_1, cg-1, ev05_01, ev01a, ev05a (ev/cg + 分隔符可选 + 角色编号1~2位)
+        m_ev_prefix = re.match(r"^(?:ev|cg)[_\-]?(\d{1,2})(?:[_\-a-z0-9]|$)", stem_lower)
         if m_ev_prefix:
             cid = int(m_ev_prefix.group(1))
             if cid == 0:

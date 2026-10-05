@@ -160,10 +160,67 @@ def extract_single_archive(archive_path: Path, raw_dest_dir: Path) -> tuple[int,
             count = 0
             for obj in env.objects:
                 if obj.type.name in ["Texture2D", "Sprite"]:
-                    data = obj.read()
-                    dest_file = raw_dest_dir / f"{data.name or obj.path_id}.png"
-                    data.image.save(dest_file)
-                    count += 1
+                    try:
+                        data = obj.read()
+                    except Exception:
+                        try:
+                            data = obj.read_typetree(wrap=True, check_read=False)
+                        except Exception:
+                            continue
+                    try:
+                        name = getattr(data, "m_Name", None) or getattr(data, "name", None) or str(obj.path_id)
+                        name = re.sub(r'[\\/*?:"<>|]', "_", str(name)).strip() or str(obj.path_id)
+                        dest_file = raw_dest_dir / f"{name}.png"
+                        if dest_file.exists() and obj.type.name == "Sprite":
+                            dest_file = raw_dest_dir / f"{name}_sprite.png"
+                        img = getattr(data, "image", None)
+                        if img:
+                            img.save(dest_file)
+                            count += 1
+                    except Exception:
+                        pass
+                elif obj.type.name == "AudioClip":
+                    try:
+                        data = obj.read()
+                    except Exception:
+                        try:
+                            data = obj.read_typetree(wrap=True, check_read=False)
+                        except Exception:
+                            continue
+                    try:
+                        samples = getattr(data, "samples", None)
+                        if samples:
+                            for s_name, s_data in samples.items():
+                                clean_sname = re.sub(r'[\\/*?:"<>|]', "_", str(s_name))
+                                out_s = raw_dest_dir / clean_sname
+                                with open(out_s, "wb") as sf:
+                                    sf.write(s_data)
+                                count += 1
+                    except Exception:
+                        pass
+                elif obj.type.name == "TextAsset":
+                    try:
+                        data = obj.read()
+                    except Exception:
+                        try:
+                            data = obj.read_typetree(wrap=True, check_read=False)
+                        except Exception:
+                            continue
+                    try:
+                        name = getattr(data, "m_Name", None) or getattr(data, "name", None) or str(obj.path_id)
+                        name = re.sub(r'[\\/*?:"<>|]', "_", str(name)).strip() or str(obj.path_id)
+                        raw_bytes = getattr(data, "bytes", None) or getattr(data, "m_Script", b"")
+                        if isinstance(raw_bytes, str):
+                            raw_bytes = raw_bytes.encode("utf-8")
+                        if raw_bytes:
+                            out_t = raw_dest_dir / name
+                            if not out_t.suffix:
+                                out_t = raw_dest_dir / f"{name}.txt"
+                            with open(out_t, "wb") as tf:
+                                tf.write(raw_bytes)
+                            count += 1
+                    except Exception:
+                        pass
             return count, 0
         except Exception as e:
             print(f"[-] UnityPy extraction failed: {e}")
@@ -214,9 +271,20 @@ def run_full_pipeline(input_path: Path, output_dir: Path, game_name: str = "", c
     elif input_path.is_dir():
         for p in input_path.rglob("*"):
             if p.is_file() and not p.name.startswith("."):
-                if p.suffix.lower() in ARCHIVE_EXTENSIONS:
+                ext = p.suffix.lower()
+                if ext in (".ress", ".resource", ".manifest", ".url", ".info", ".config", ".json", ".dll", ".exe"):
+                    continue
+                if ext in ARCHIVE_EXTENSIONS:
                     found_archives.append(p)
-                elif p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".bmp"}:
+                else:
+                    try:
+                        with open(p, "rb") as tf:
+                            head_magic = tf.read(16)
+                        if head_magic.startswith(b"UnityFS") or head_magic.startswith(b"XP3\r\n") or head_magic.startswith(b"RPA-"):
+                            found_archives.append(p)
+                    except Exception:
+                        pass
+                if ext in {".png", ".jpg", ".jpeg", ".webp", ".bmp"}:
                     has_extracted_images = True
 
     print(f"[*] Discovered {len(found_archives)} archive(s).")
@@ -316,16 +384,44 @@ def run_full_pipeline(input_path: Path, output_dir: Path, game_name: str = "", c
                 sort_stats["thumbnails"] += 1
                 continue
 
+            # 角色智能预检
+            detected_char = classifier.detect_character(stem)
+
             # 背景图
             is_bg = False
-            if (stem.startswith(("bg", "scen", "stage", "back")) and not stem.startswith("bgm")) or                parent_name in ("bgimage", "bg", "background", "backgrounds", "scenery"):
+            if (stem.startswith(("bg", "scen", "stage", "back", "neonbg", "neongrid", "neonbuildings", "neonsunset", "catlevelmap", "shopboard")) and not stem.startswith("bgm")) or parent_name in ("bgimage", "bg", "background", "backgrounds", "scenery"):
                 is_bg = True
-            elif w >= 800 and h >= 550 and aspect >= 1.2 and mode == "RGB" and                  not stem.startswith(("ev", "cg", "st", "ch", "fg", "btn", "icon")):
+            elif w >= 800 and h >= 550 and aspect >= 1.2 and detected_char in ("Others", "Common_Others") and not stem.startswith(("ev", "cg", "st", "ch", "fg", "btn", "icon", "cursor", "popup", "settings", "detailbox", "radialshine", "nova", "icon1024", "18notice")):
                 is_bg = True
 
             if is_bg:
                 shutil.copy2(file_path, out_bg / file_path.name)
                 sort_stats["backgrounds"] += 1
+                continue
+
+            # 角色主视觉 / 特征角色图判断
+            if detected_char not in ("Others", "Common_Others"):
+                is_part = False
+                if any(k in stem for k in ["_anm", "_eye", "_lip", "_face", "_part", "_diff", "_cut", "_mouth", "hand"]):
+                    is_part = True
+                elif w > 0 and h > 0 and w < 400 and h < 400:
+                    is_part = True
+
+                if is_part:
+                    tdir = out_sp_parts / detected_char
+                    tdir.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(file_path, tdir / file_path.name)
+                    sort_stats["sprite_parts"] += 1
+                elif aspect < 0.8:
+                    tdir = out_sprites / detected_char
+                    tdir.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(file_path, tdir / file_path.name)
+                    sort_stats["sprites_full"] += 1
+                else:
+                    tdir = out_cg / detected_char
+                    tdir.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(file_path, tdir / file_path.name)
+                    sort_stats["cg_events"] += 1
                 continue
 
             # 剧情 CG

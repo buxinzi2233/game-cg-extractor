@@ -1,0 +1,2329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拉特兰 CIVITATIS LATERANENSE // 《众生行记》全景档案界面</title>
+  <meta name="description" content="《明日方舟》拉特兰城邦交互档案系统，100%还原转译《众生行记》UI美学：普通/EX/S三态切换、中央天轴测绘、萨科塔维特鲁威人解构、向内伸出的手与危机条带、律法机械主脑揭示。">
+  <style>
+    /* ==========================================================================
+       1. HYPERGRYPH AESTHETIC DESIGN TOKENS // 鹰角/众生行记设计语言变量系统
+       ========================================================================== */
+    :root {
+      /* 众生行记普通态：莫奈水光与圣白场色 */
+      --color-bg: #F3F6FA;
+      --color-bg-subtle: #E8EEF5;
+      --color-card-bg: rgba(255, 255, 255, 0.95);
+      --color-card-border: rgba(148, 163, 184, 0.38);
+      --color-card-border-hover: #1D4ED8;
+      
+      /* 文本层级墨色 */
+      --color-text-primary: #0F172A;
+      --color-text-secondary: #334155;
+      --color-text-tertiary: #64748B;
+      --color-text-dim: #94A3B8;
+
+      /* 核心象征色 */
+      --color-blue-axis: #1D4ED8;        /* 贯穿天轴蓝 / 律法科技青 */
+      --color-blue-axis-glow: rgba(29, 78, 216, 0.45);
+      --color-blue-subtle: #EBF3FC;      /* 浅天蓝底色 */
+      --color-halo-gold: #D97706;        /* 萨科塔光环金 */
+      --color-halo-gold-bright: #F59E0B; /* 高光金 */
+      --color-halo-glow: rgba(245, 158, 11, 0.32);
+      
+      /* 突袭与危机警示色 */
+      --color-alert-red: #DC2626;
+      --color-alert-red-dark: #991B1B;
+      --color-alert-red-bg: rgba(254, 226, 226, 0.85);
+
+      /* 字体族系 */
+      --font-display: "DIN Condensed", "Bebas Neue", "Oswald", -apple-system, sans-serif;
+      --font-mono: "JetBrains Mono", "Chivo Mono", "SF Mono", Consolas, monospace;
+      --font-serif: "Cinzel", "Playfair Display", "Times New Roman", serif;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+
+      /* 界面构架尺寸 */
+      --header-h: 56px;
+      --bottom-bar-h: 68px;
+      --transition-hg: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: all 0.15s ease-out;
+    }
+
+    /* EX 模式全局主题覆盖 (危机态红白同心张力) */
+    body.mode-ex {
+      --color-bg: #ECEFF4;
+      --color-bg-subtle: #DEE4ED;
+      --color-blue-axis: #DC2626;
+      --color-blue-axis-glow: rgba(220, 38, 38, 0.45);
+      --color-blue-subtle: #FEE2E2;
+      --color-card-border-hover: #DC2626;
+    }
+
+    /* S 模式全局主题覆盖 (绝境态维特鲁威解构与深层神性测量) */
+    body.mode-s {
+      --color-bg: #F1F5F9;
+      --color-bg-subtle: #E2E8F0;
+      --color-blue-axis: #0284C7;
+      --color-blue-axis-glow: rgba(2, 132, 199, 0.45);
+      --color-blue-subtle: #E0F2FE;
+      --color-card-border-hover: #0284C7;
+    }
+
+    /* ==========================================================================
+       2. BASE RESET & TECHNICAL CANVAS // 视界与画布基础
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    p, span, h1, h2, h3, h4, .selectable-text {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--color-bg);
+      color: var(--color-text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* 纯代码微粒胶片噪点 */
+    .film-grain {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.038;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* 动态水光画布 (莫奈水光氛围层) */
+    #waterlightCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* 细微技术栅格底纹 (Hairline Technical Grid) */
+    .tech-grid-bg {
+      position: fixed;
+      inset: 0;
+      background-size: 72px 72px;
+      background-image: 
+        linear-gradient(to right, rgba(148, 163, 184, 0.09) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.09) 1px, transparent 1px);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* 边缘微型测绘十字 (Technical Crosshairs) */
+    .crosshair {
+      position: fixed;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--color-text-dim);
+      pointer-events: none;
+      z-index: 5;
+      letter-spacing: 0.05em;
+    }
+    .crosshair-tl { top: 68px; left: 24px; }
+    .crosshair-tr { top: 68px; right: 24px; }
+    .crosshair-bl { bottom: 80px; left: 24px; }
+    .crosshair-br { bottom: 80px; right: 24px; }
+
+    /* ==========================================================================
+       3. TOP TACTICAL HUD // 顶部战术与测绘标尺
+       ========================================================================== */
+    .tactical-hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: rgba(243, 246, 250, 0.90);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--color-card-border);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 3vw, 2.5rem);
+    }
+
+    .hud-left {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .laterano-emblem-wrap {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .emblem-svg {
+      width: 100%;
+      height: 100%;
+      transition: var(--transition-hg);
+    }
+
+    .hud-title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hud-main-title {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      letter-spacing: 0.12em;
+      line-height: 1.05;
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hud-sub-title {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--color-text-tertiary);
+      letter-spacing: 0.08em;
+    }
+
+    .hud-tag-pill {
+      background: var(--color-blue-axis);
+      color: #FFFFFF;
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      transition: var(--transition-hg);
+    }
+
+    .hud-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.1em;
+    }
+
+    .hud-center .dot-separator {
+      color: var(--color-text-dim);
+    }
+
+    .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hud-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--color-card-border);
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 6px 13px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition-fast);
+    }
+
+    .hud-btn:hover {
+      background: var(--color-blue-subtle);
+      border-color: var(--color-blue-axis);
+      color: var(--color-blue-axis);
+    }
+
+    /* ==========================================================================
+       4. CENTRAL BLUE AXIS // 众生行记贯穿式垂直测绘天轴
+       ========================================================================== */
+    .vertical-axis-system {
+      position: fixed;
+      top: var(--header-h);
+      bottom: var(--bottom-bar-h);
+      left: 50%;
+      width: 2px;
+      background: linear-gradient(180deg, 
+        transparent 0%, 
+        var(--color-blue-axis) 12%, 
+        var(--color-blue-axis) 88%, 
+        transparent 100%);
+      transform: translateX(-50%);
+      z-index: 12;
+      pointer-events: none;
+      transition: var(--transition-hg);
+    }
+
+    .axis-ruler-ticks {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2.5rem 0;
+    }
+
+    .ruler-tick {
+      width: 16px;
+      height: 1px;
+      background: var(--color-blue-axis);
+      position: relative;
+      left: -7px;
+      opacity: 0.55;
+    }
+
+    .axis-center-target {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px;
+      height: 32px;
+      border: 1px dashed var(--color-blue-axis);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: targetSpin 20s linear infinite;
+    }
+
+    @keyframes targetSpin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .axis-center-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--color-blue-axis);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--color-blue-axis-glow);
+    }
+
+    /* ==========================================================================
+       5. MAIN STAGE WRAPPER // 主交互舞台视界
+       ========================================================================== */
+    .stage-viewport {
+      position: fixed;
+      top: var(--header-h);
+      bottom: var(--bottom-bar-h);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mode-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      opacity: 0;
+      transform: scale(0.985);
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .mode-canvas.active {
+      display: flex;
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ==========================================================================
+       6. MODE A: NORMAL // 众生行记·普通态 (云天插片、镜向垂落形体、水平路线)
+       ========================================================================== */
+    #modeNormal {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem clamp(1rem, 3vw, 3rem);
+      position: relative;
+    }
+
+    /* 镜向垂落形体与大圣堂尖顶线稿 (Cathedral Gothic Wireframe Projection) */
+    .normal-background-cathedral {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(1200px, 96vw);
+      height: 480px;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.18;
+    }
+
+    /* 圣白云天插片主容器 (Frosted Light Slice Plate) */
+    .light-slice-plate {
+      position: relative;
+      width: min(1180px, 94vw);
+      height: 460px;
+      border: 1px solid var(--color-card-border);
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.88) 0%, 
+        rgba(235, 243, 252, 0.65) 45%, 
+        rgba(255, 255, 255, 0.82) 100%);
+      box-shadow: 0 24px 60px -15px rgba(29, 78, 216, 0.08);
+      border-radius: 4px;
+      z-index: 5;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.8rem 2.6rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .plate-watermark {
+      position: absolute;
+      bottom: -15px;
+      right: 20px;
+      font-family: var(--font-display);
+      font-size: 10rem;
+      font-weight: 900;
+      color: rgba(29, 78, 216, 0.032);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    .plate-top-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 5;
+    }
+
+    .plate-heading {
+      font-family: var(--font-display);
+      font-size: 3.8rem;
+      line-height: 0.95;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--color-text-primary);
+    }
+
+    .plate-sub-heading {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      font-style: italic;
+      color: var(--color-text-secondary);
+      margin-top: 6px;
+    }
+
+    .plate-badge-meta {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--color-blue-axis);
+      text-align: right;
+      letter-spacing: 0.1em;
+      line-height: 1.6;
+    }
+
+    /* 水平折线关卡网络 (Horizontal Route Stages Track) */
+    .route-node-track {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      position: relative;
+      z-index: 10;
+      margin-top: auto;
+      padding-bottom: 0.75rem;
+      gap: 12px;
+    }
+
+    /* 贯穿折线连线 */
+    .route-line-svg {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 48px;
+      transform: translateY(-50%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* 鹰角级关卡白底卡片 (Stage Node Cards with Chamfered Cuts) */
+    .stage-card-node {
+      position: relative;
+      z-index: 5;
+      background: #FFFFFF;
+      border: 1px solid var(--color-card-border);
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+      padding: 0.85rem 1rem;
+      flex: 1;
+      min-width: 120px;
+      max-width: 155px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--color-text-primary);
+      box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.05);
+      transition: var(--transition-hg);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stage-card-node::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 10px;
+      height: 3px;
+      background: var(--color-blue-axis);
+      transition: var(--transition-fast);
+    }
+
+    .stage-card-node:hover,
+    .stage-card-node.selected {
+      transform: translateY(-7px);
+      box-shadow: 0 16px 32px -8px rgba(29, 78, 216, 0.22);
+      border-color: var(--color-blue-axis);
+    }
+
+    .stage-card-node.selected {
+      background: var(--color-blue-subtle);
+    }
+
+    .stage-code {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--color-blue-axis);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stage-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stage-sub {
+      font-size: 0.68rem;
+      color: var(--color-text-tertiary);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stage-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-blue-axis);
+      box-shadow: 0 0 6px var(--color-blue-axis-glow);
+    }
+
+    /* ==========================================================================
+       7. MODE B: EX // 众生行记·EX态 (向内伸出的手、同心透视圆环、红白条带)
+       ========================================================================== */
+    #modeEx {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 1.5rem 3rem;
+    }
+
+    /* EX 标志性同心压缩圆环系统 */
+    .ex-concentric-rings-wrap {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .ex-rings-svg {
+      width: 820px;
+      height: 820px;
+      animation: exConcentricRotate 45s linear infinite;
+    }
+
+    @keyframes exConcentricRotate {
+      from { transform: perspective(650px) rotateX(28deg) rotate(0deg); }
+      to { transform: perspective(650px) rotateX(28deg) rotate(360deg); }
+    }
+
+    /* EX 标志性“向内伸出的手”矢量图层 (Reaching Hands Vector Layer) */
+    .ex-reaching-hands-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* EX 红白斜向警示条带 (Hazard Ribbons) */
+    .ex-hazard-strip-top {
+      position: absolute;
+      top: 10%;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--color-alert-red),
+        var(--color-alert-red) 14px,
+        #FFFFFF 14px,
+        #FFFFFF 28px
+      );
+      box-shadow: 0 2px 10px rgba(220, 38, 38, 0.25);
+      z-index: 4;
+    }
+
+    .ex-hazard-strip-bottom {
+      position: absolute;
+      bottom: 12%;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--color-alert-red),
+        var(--color-alert-red) 14px,
+        #FFFFFF 14px,
+        #FFFFFF 28px
+      );
+      opacity: 0.85;
+      z-index: 4;
+    }
+
+    .ex-main-card {
+      position: relative;
+      z-index: 10;
+      width: min(1000px, 92vw);
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--color-alert-red);
+      box-shadow: 0 24px 60px -15px rgba(220, 38, 38, 0.25);
+      padding: 2.2rem 3rem;
+      border-radius: 2px;
+      backdrop-filter: blur(14px);
+    }
+
+    .ex-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid var(--color-alert-red);
+      padding-bottom: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .ex-big-title {
+      font-family: var(--font-display);
+      font-size: 3.6rem;
+      color: var(--color-alert-red);
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      line-height: 0.95;
+    }
+
+    .ex-meta-code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--color-alert-red);
+      letter-spacing: 0.12em;
+      text-align: right;
+    }
+
+    .ex-grid-columns {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .ex-dossier-text p {
+      margin-bottom: 1rem;
+      color: var(--color-text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .ex-timeline-list {
+      list-style: none;
+      border-left: 2px solid var(--color-alert-red);
+      padding-left: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .ex-timeline-item {
+      position: relative;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 2px;
+      transition: var(--transition-fast);
+    }
+
+    .ex-timeline-item:hover {
+      background: var(--color-blue-subtle);
+    }
+
+    .ex-timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -1.78rem;
+      top: 10px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-alert-red);
+      box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+    }
+
+    .ex-time-stamp {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--color-alert-red);
+    }
+
+    .ex-time-desc {
+      font-size: 0.88rem;
+      color: var(--color-text-primary);
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       8. MODE C: S // 众生行记·S态 (萨科塔维特鲁威人与神性解构)
+       ========================================================================== */
+    #modeS {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem clamp(1rem, 3vw, 3rem);
+      position: relative;
+    }
+
+    .s-deconstruction-container {
+      width: min(1180px, 94vw);
+      height: 480px;
+      background: rgba(255, 255, 255, 0.97);
+      border: 1px solid var(--color-card-border);
+      display: grid;
+      grid-template-columns: 290px 1fr 280px;
+      gap: 1.5rem;
+      padding: 1.5rem 1.8rem;
+      border-radius: 4px;
+      box-shadow: 0 20px 50px -10px rgba(2, 132, 199, 0.12);
+      position: relative;
+      z-index: 10;
+      backdrop-filter: blur(14px);
+    }
+
+    /* 左侧模式关卡索引栏 */
+    .s-sidebar-stages {
+      border-right: 1px solid var(--color-card-border);
+      padding-right: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .s-sidebar-header {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--color-blue-axis);
+      letter-spacing: 0.12em;
+      border-bottom: 2px solid var(--color-blue-axis);
+      padding-bottom: 6px;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .s-stage-item {
+      padding: 9px 12px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-card-border);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .s-stage-item:hover, .s-stage-item.active {
+      background: var(--color-blue-subtle);
+      border-color: var(--color-blue-axis);
+      transform: translateX(4px);
+    }
+
+    .s-stage-code {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--color-blue-axis);
+    }
+
+    .s-stage-name {
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-top: 2px;
+    }
+
+    /* 中间维特鲁威人交互主图解 */
+    .s-center-anatomy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .vitruvian-canvas-wrap {
+      width: 100%;
+      height: 385px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vitruvian-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .interactive-hotspot {
+      cursor: pointer;
+      transition: fill 0.25s, stroke 0.25s, filter 0.25s;
+    }
+
+    .interactive-hotspot:hover {
+      fill: rgba(59, 130, 246, 0.35) !important;
+      stroke: var(--color-blue-axis) !important;
+      stroke-width: 2.8 !important;
+      filter: drop-shadow(0 0 6px var(--color-blue-axis-glow));
+    }
+
+    /* 右侧人物肖像线稿与解剖读数 */
+    .s-right-inspect {
+      border-left: 1px solid var(--color-card-border);
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .inspect-face-box {
+      width: 100%;
+      height: 175px;
+      border: 1px solid var(--color-card-border);
+      background: var(--color-bg);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .inspect-data-terminal {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    .inspect-data-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed var(--color-card-border);
+      padding: 4px 0;
+    }
+
+    /* ==========================================================================
+       9. SLIDE-OUT DOSSIER DRAWER // 抽屉式深度档案阅读视窗
+       ========================================================================== */
+    .dossier-drawer {
+      position: fixed;
+      top: var(--header-h);
+      bottom: var(--bottom-bar-h);
+      right: -640px;
+      width: min(600px, 94vw);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(22px);
+      border-left: 1px solid var(--color-card-border);
+      box-shadow: -15px 0 50px rgba(0, 0, 0, 0.1);
+      z-index: 80;
+      transition: right 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dossier-drawer.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      padding: 1.4rem 2rem 1rem;
+      border-bottom: 1px solid var(--color-card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(243, 246, 250, 0.6);
+    }
+
+    .drawer-code-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drawer-code {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--color-blue-axis);
+      font-weight: 700;
+    }
+
+    .drawer-badge {
+      background: var(--color-blue-subtle);
+      color: var(--color-blue-axis);
+      border: 1px solid var(--color-blue-axis);
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      padding: 1px 6px;
+      border-radius: 2px;
+    }
+
+    .drawer-close-btn {
+      background: none;
+      border: 1px solid var(--color-card-border);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      transition: var(--transition-fast);
+    }
+
+    .drawer-close-btn:hover {
+      background: var(--color-blue-axis);
+      color: #FFFFFF;
+      border-color: var(--color-blue-axis);
+    }
+
+    .drawer-body {
+      padding: 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .drawer-article-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--color-text-primary);
+      margin-bottom: 0.35rem;
+      line-height: 1.15;
+    }
+
+    .drawer-article-sub {
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--color-text-tertiary);
+      font-size: 0.96rem;
+      margin-bottom: 1.4rem;
+      display: block;
+    }
+
+    .drawer-quote-card {
+      background: var(--color-blue-subtle);
+      border-left: 3px solid var(--color-blue-axis);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .quote-speaker {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--color-blue-axis);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .quote-content {
+      font-size: 0.92rem;
+      font-style: italic;
+      color: var(--color-text-secondary);
+      line-height: 1.55;
+    }
+
+    .drawer-body p {
+      font-size: 0.96rem;
+      color: #1E293B;
+      line-height: 1.8;
+      margin-bottom: 1.25rem;
+      text-align: justify;
+    }
+
+    /* 律法机密揭示模块 (Spoiler Decryption Section) */
+    .classified-box {
+      margin-top: 1.5rem;
+      padding: 1.4rem;
+      background: #0B1120;
+      color: #E2E8F0;
+      border-radius: 3px;
+      border: 1px solid #1E293B;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .classified-title {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #38BDF8;
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .classified-text-preview {
+      color: #94A3B8;
+      font-size: 0.88rem;
+      margin-bottom: 1rem !important;
+    }
+
+    .btn-decrypt {
+      background: var(--color-blue-axis);
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 18px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-decrypt:hover {
+      background: #2563EB;
+      box-shadow: 0 0 14px rgba(37, 99, 235, 0.7);
+    }
+
+    .decrypted-content {
+      display: none;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #334155;
+      font-size: 0.92rem;
+      color: #F1F5F9;
+      line-height: 1.75;
+    }
+
+    .decrypted-content.active {
+      display: block;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 守护铳执照合规查询器 */
+    .gun-app-box {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--color-bg);
+      border: 1px solid var(--color-card-border);
+      border-radius: 3px;
+    }
+
+    .gun-app-title {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--color-blue-axis);
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+    }
+
+    .gun-input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 0.75rem;
+    }
+
+    .gun-select {
+      flex: 1;
+      padding: 6px 10px;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      border: 1px solid var(--color-card-border);
+      background: #FFFFFF;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .gun-check-btn {
+      background: #0F172A;
+      color: #FFFFFF;
+      border: none;
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: var(--transition-fast);
+    }
+
+    .gun-check-btn:hover {
+      background: var(--color-blue-axis);
+    }
+
+    .gun-result-box {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--color-text-secondary);
+      background: #FFFFFF;
+      padding: 8px 12px;
+      border: 1px dashed var(--color-card-border);
+      border-radius: 2px;
+    }
+
+    /* 启示之钟撞钟仪式组件 */
+    .bell-ritual-box {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      color: #FFFFFF;
+      border-radius: 3px;
+      text-align: center;
+    }
+
+    .bell-strike-btn {
+      background: #F59E0B;
+      color: #0F172A;
+      border: none;
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      padding: 10px 24px;
+      cursor: pointer;
+      border-radius: 2px;
+      font-weight: 800;
+      margin-top: 8px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+      transition: var(--transition-fast);
+    }
+
+    .bell-strike-btn:hover {
+      background: #FBBF24;
+      transform: scale(1.03);
+    }
+
+    /* Gelato 调配工坊小组件 */
+    .gelato-lab-box {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 3px;
+    }
+
+    /* ==========================================================================
+       10. BOTTOM MODE SELECTOR BAR // 众生行记标志性底部选关组
+       ========================================================================== */
+    .bottom-hud-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--bottom-bar-h);
+      background: rgba(243, 246, 250, 0.92);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid var(--color-card-border);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 3vw, 2.5rem);
+    }
+
+    .bottom-info-strip {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--color-text-tertiary);
+    }
+
+    .mode-switch-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mode-tab-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--color-card-border);
+      padding: 8px 18px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition-fast);
+      letter-spacing: 0.05em;
+    }
+
+    .mode-tab-btn:hover {
+      border-color: var(--color-blue-axis);
+      color: var(--color-blue-axis);
+    }
+
+    .mode-tab-btn.active {
+      background: var(--color-blue-axis);
+      color: #FFFFFF;
+      border-color: var(--color-blue-axis);
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
+    }
+
+    .mode-tab-btn.btn-ex.active {
+      background: var(--color-alert-red);
+      border-color: var(--color-alert-red);
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+    }
+
+    .mode-tab-btn.btn-s.active {
+      background: var(--color-blue-axis);
+      border-color: var(--color-blue-axis);
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    }
+
+    /* ==========================================================================
+       11. A11Y REDUCED MOTION // 无障碍动态降级
+       ========================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+      .ex-rings-svg, .axis-center-target {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="mode-normal">
+
+  <!-- 纯代码微粒胶片噪点与水光底图 -->
+  <div class="film-grain" aria-hidden="true"></div>
+  <div class="tech-grid-bg" aria-hidden="true"></div>
+  <canvas id="waterlightCanvas"></canvas>
+
+  <!-- 四角精细技术测绘坐标 -->
+  <div class="crosshair crosshair-tl">+ 38°12'44"N // LAT.001</div>
+  <div class="crosshair crosshair-tr">ELEV: +420M // PAGUS.STEV</div>
+  <div class="crosshair crosshair-bl">NOTARIAL-ARCHIVE // CODEX.1099</div>
+  <div class="crosshair crosshair-br">SYS: SANKTA-CONSENSUS [OK] +</div>
+
+  <!-- 贯穿式中央青蓝天轴系统 -->
+  <div class="vertical-axis-system" aria-hidden="true">
+    <div class="axis-ruler-ticks">
+      <div class="ruler-tick"></div>
+      <div class="ruler-tick"></div>
+      <div class="ruler-tick"></div>
+      <div class="ruler-tick"></div>
+      <div class="ruler-tick"></div>
+      <div class="ruler-tick"></div>
+      <div class="ruler-tick"></div>
+    </div>
+    <div class="axis-center-target">
+      <div class="axis-center-dot"></div>
+    </div>
+  </div>
+
+  <!-- 顶部战术与测绘状态栏 -->
+  <header class="tactical-hud">
+    <div class="hud-left">
+      <div class="laterano-emblem-wrap">
+        <svg class="emblem-svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <!-- 拉特兰宗座经典盾徽：光环、十字与双铳交叉构图 -->
+          <circle cx="24" cy="11" r="7" stroke="var(--color-blue-axis)" stroke-width="2" fill="none"/>
+          <path d="M24 18 L24 44" stroke="var(--color-blue-axis)" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M14 26 L34 26" stroke="var(--color-blue-axis)" stroke-width="2" stroke-linecap="round"/>
+          <!-- 交叉铳管意象 -->
+          <line x1="12" y1="36" x2="36" y2="20" stroke="var(--color-blue-axis)" stroke-width="1.8" stroke-dasharray="3 2"/>
+          <line x1="12" y1="20" x2="36" y2="36" stroke="var(--color-blue-axis)" stroke-width="1.8" stroke-dasharray="3 2"/>
+          <circle cx="24" cy="26" r="3" fill="var(--color-blue-axis)"/>
+        </svg>
+      </div>
+      <div class="hud-title-group">
+        <div class="hud-main-title">
+          CIVITATIS LATERANENSE
+          <span class="hud-tag-pill" id="hudStatusPill">NORMAL // 众生行记</span>
+        </div>
+        <div class="hud-sub-title">TERRA CALENDAR 1099.03 · NOTARIAL ARCHIVE CODEX</div>
+      </div>
+    </div>
+
+    <div class="hud-center">
+      <span>LAT. 38°12' N</span>
+      <span class="dot-separator">•</span>
+      <span>PAGUS STEVONUS</span>
+      <span class="dot-separator">•</span>
+      <span id="coordReadout">AXIS: 0.000 // STAGE: 01</span>
+    </div>
+
+    <div class="hud-right">
+      <button class="hud-btn" id="soundToggleBtn" title="音效开关">
+        <span id="soundIcon">🔊</span> SOUND
+      </button>
+      <button class="hud-btn" id="drawerDirectBtn" title="展开教廷公证所卷宗">
+        <span>📖</span> 圣堂卷宗
+      </button>
+    </div>
+  </header>
+
+  <!-- 主交互舞台视界 -->
+  <main class="stage-viewport">
+
+    <!-- =======================================================================
+         MODE A: NORMAL // 普通态 (圣白云天、中央蓝轴、镜向垂落、折线关卡网络)
+         ======================================================================= -->
+    <section class="mode-canvas active" id="modeNormal" aria-label="众生行记普通页面">
+      
+      <!-- 镜向垂落大圣堂尖顶线稿投影 (Cathedral Gothic Projection) -->
+      <svg class="normal-background-cathedral" viewBox="0 0 1000 400" fill="none">
+        <path d="M500 20 L560 160 L620 220 L620 380 L380 380 L380 220 L440 160 Z" stroke="var(--color-blue-axis)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="500" y1="20" x2="500" y2="380" stroke="var(--color-blue-axis)" stroke-width="1"/>
+        <!-- 侧翼哥特尖券与垂落帷幔线 -->
+        <path d="M380 240 Q320 280 260 380" stroke="var(--color-blue-axis)" stroke-width="1.2"/>
+        <path d="M620 240 Q680 280 740 380" stroke="var(--color-blue-axis)" stroke-width="1.2"/>
+        <!-- 玫瑰花窗同心环 -->
+        <circle cx="500" cy="180" r="45" stroke="var(--color-blue-axis)" stroke-width="1.2" stroke-dasharray="2 2"/>
+        <circle cx="500" cy="180" r="28" stroke="var(--color-blue-axis)" stroke-width="1"/>
+      </svg>
+
+      <!-- 圣白云天通透插片 -->
+      <div class="light-slice-plate">
+        <div class="plate-watermark">LATERANO</div>
+
+        <div class="plate-top-info">
+          <div>
+            <h1 class="plate-heading">拉特兰圣城</h1>
+            <p class="plate-sub-heading">“在最初，唯有律法，而律法即是萨科塔的最初之语。”</p>
+          </div>
+          <div class="plate-badge-meta">
+            <div>APOSTOLIC TERRITORY // SANCTUM</div>
+            <div>STATUS: THEOCRATIC EDEN [CONFIRMED]</div>
+            <div>NOTARIAL SERIAL: LT-1099-MASSES</div>
+          </div>
+        </div>
+
+        <!-- 水平折线关卡卡片组 (LT-01 至 LT-07) -->
+        <div class="route-node-track">
+          <!-- 背景连接折线与信号光点 -->
+          <svg class="route-line-svg" preserveAspectRatio="none" viewBox="0 0 1000 48">
+            <polyline points="70,24 210,18 355,30 500,24 645,18 790,30 930,24" fill="none" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="5 3"/>
+            <!-- 动态信号节点 -->
+            <circle cx="500" cy="24" r="4" fill="var(--color-blue-axis)"/>
+          </svg>
+
+          <!-- 关卡节点 1 -->
+          <div class="stage-card-node selected" data-node="LT-01">
+            <div class="stage-code">
+              <span>LT-01</span>
+              <span class="stage-status-dot"></span>
+            </div>
+            <div class="stage-title">圣城与穹顶</div>
+            <div class="stage-sub">政教合一与十三宪条</div>
+          </div>
+
+          <!-- 关卡节点 2 -->
+          <div class="stage-card-node" data-node="LT-02">
+            <div class="stage-code">
+              <span>LT-02</span>
+              <span class="stage-status-dot"></span>
+            </div>
+            <div class="stage-title">公证所法统</div>
+            <div class="stage-sub">法定执行人与规约</div>
+          </div>
+
+          <!-- 关卡节点 3 -->
+          <div class="stage-card-node" data-node="LT-03">
+            <div class="stage-code">
+              <span>LT-03</span>
+              <span class="stage-status-dot"></span>
+            </div>
+            <div class="stage-title">光环与共感</div>
+            <div class="stage-sub">萨科塔同理神经网络</div>
+          </div>
+
+          <!-- 关卡节点 4 -->
+          <div class="stage-card-node" data-node="LT-04">
+            <div class="stage-code">
+              <span>LT-04</span>
+              <span class="stage-status-dot"></span>
+            </div>
+            <div class="stage-title">万铳与日常</div>
+            <div class="stage-sub">终身守护铳与爆破权</div>
+          </div>
+
+          <!-- 关卡节点 5 -->
+          <div class="stage-card-node" data-node="LT-05">
+            <div class="stage-code">
+              <span>LT-05</span>
+              <span class="stage-status-dot"></span>
+            </div>
+            <div class="stage-title">甜度教派</div>
+            <div class="stage-sub">Gelato与升天欢庆葬礼</div>
+          </div>
+
+          <!-- 关卡节点 6 -->
+          <div class="stage-card-node" data-node="LT-06">
+            <div class="stage-code">
+              <span>LT-06</span>
+              <span class="stage-status-dot"></span>
+            </div>
+            <div class="stage-title">圣所与古刹</div>
+            <div class="stage-sub">安布罗修与破产兰登</div>
+          </div>
+
+          <!-- 关卡节点 7 -->
+          <div class="stage-card-node" data-node="LT-07">
+            <div class="stage-code">
+              <span>LT-07</span>
+              <span class="stage-status-dot"></span>
+            </div>
+            <div class="stage-title">峰会与宣言</div>
+            <div class="stage-sub">破壁开放的千禧转折</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         MODE B: EX // EX态 (向内伸出的手、万国峰会危机、同心压缩透视、红白警戒条带)
+         ======================================================================= -->
+    <section class="mode-canvas" id="modeEx" aria-label="众生行记EX危机页面">
+      <!-- 同心透视压缩圆环 -->
+      <div class="ex-concentric-rings-wrap">
+        <svg class="ex-rings-svg" viewBox="0 0 800 800" fill="none">
+          <circle cx="400" cy="400" r="380" stroke="rgba(220, 38, 38, 0.25)" stroke-width="1.5"/>
+          <circle cx="400" cy="400" r="300" stroke="rgba(220, 38, 38, 0.4)" stroke-width="1" stroke-dasharray="8 4"/>
+          <circle cx="400" cy="400" r="220" stroke="rgba(220, 38, 38, 0.6)" stroke-width="2"/>
+          <circle cx="400" cy="400" r="140" stroke="rgba(220, 38, 38, 0.8)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <line x1="400" y1="20" x2="400" y2="780" stroke="rgba(220, 38, 38, 0.3)" stroke-width="1"/>
+          <line x1="20" y1="400" x2="780" y2="400" stroke="rgba(220, 38, 38, 0.3)" stroke-width="1"/>
+        </svg>
+      </div>
+
+      <!-- EX 标志性“向内伸出的手”矢量剪影图层 (Reaching Hands Tension Layer) -->
+      <svg class="ex-reaching-hands-layer" viewBox="0 0 1200 700" fill="none">
+        <!-- 左侧伸向中心的手 (寻路者安多恩与受难者) -->
+        <path d="M -20 220 Q 140 240 280 290 C 310 300 340 290 380 295 L 360 315 L 320 310 L 290 325 L 260 315 L -20 310 Z" fill="rgba(220, 38, 38, 0.12)" stroke="var(--color-alert-red)" stroke-width="1.5"/>
+        <!-- 右侧伸向中心的手 (宗座执行人与律法守卫者) -->
+        <path d="M 1220 220 Q 1060 240 920 290 C 890 300 860 290 820 295 L 840 315 L 880 310 L 910 325 L 940 315 L 1220 310 Z" fill="rgba(220, 38, 38, 0.12)" stroke="var(--color-alert-red)" stroke-width="1.5"/>
+        <!-- 底部向上叩问的手臂意象 -->
+        <path d="M 520 720 L 520 540 Q 520 500 500 460 Q 540 470 560 510 L 560 720 Z" fill="rgba(220, 38, 38, 0.08)" stroke="var(--color-alert-red)" stroke-width="1.2" stroke-dasharray="3 3"/>
+      </svg>
+
+      <!-- 红白斜向警示条带 -->
+      <div class="ex-hazard-strip-top"></div>
+      <div class="ex-hazard-strip-bottom"></div>
+
+      <!-- EX 主展板 -->
+      <div class="ex-main-card">
+        <div class="ex-header-row">
+          <div>
+            <div class="ex-big-title">SUMMIT OF NATIONS</div>
+            <div style="font-family: var(--font-serif); font-size: 1.15rem; color: var(--color-text-secondary); margin-top: 4px;">
+              万国峰会危机 · 启示之钟鸣响与破壁交锋
+            </div>
+          </div>
+          <div class="ex-meta-code">
+            <div>STATUS: CONVERGENCE CRISIS</div>
+            <div>CODE: LT-EX-SUMMIT // 1099</div>
+            <div>THREAT LEVEL: MAXIMUM</div>
+          </div>
+        </div>
+
+        <div class="ex-grid-columns">
+          <div class="ex-dossier-text">
+            <p>
+              泰拉历 1099 年春，拉特兰迎来立国千年来最剧烈的政治与信仰震荡。现任教皇伊万杰利斯塔十一世决意打破萨科塔孤立主义，在大圣堂召集泰拉列国举办首届万国峰会。
+            </p>
+            <p>
+              安多恩率领的“寻路者”潜入圣城，对律法排他性发起决死叩问；各国使节暗藏杀机，城内保守派教士密谋阻挠。最终，启示之塔千年未鸣的大钟被敲响，教皇发表震撼泰拉的《拉特兰宣言》，向全大陆宣布开放。
+            </p>
+            <button class="hud-btn" id="exReadDetailBtn" style="border-color: var(--color-alert-red); color: var(--color-alert-red); margin-top: 0.5rem; font-weight: 700;">
+              <span>⚠️</span> 调阅峰会机密冲突档案与核心人物矩阵
+            </button>
+          </div>
+
+          <div>
+            <ul class="ex-timeline-list">
+              <li class="ex-timeline-item" data-ex-target="1">
+                <div class="ex-time-stamp">STAGE 01 // 危机潜伏 · 使节进驻</div>
+                <div class="ex-time-desc">设立30周年，伊比利亚与列强使团进驻大圣堂</div>
+              </li>
+              <li class="ex-timeline-item" data-ex-target="2">
+                <div class="ex-time-stamp">STAGE 02 // 寻路者突入 · 墓穴交火</div>
+                <div class="ex-time-desc">安多恩潜入地底大圣堂墓穴，与公证所执行人正面冲突</div>
+              </li>
+              <li class="ex-timeline-item" data-ex-target="3">
+                <div class="ex-time-stamp">STAGE 03 // 钟楼鸣响 · 破壁宣言</div>
+                <div class="ex-time-desc">千年大钟鸣响，教皇发表《拉特兰宣言》迎向泰拉全境</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         MODE C: S // S态 (萨科塔维特鲁威人与共感生理测量解构)
+         ======================================================================= -->
+    <section class="mode-canvas" id="modeS" aria-label="众生行记S解构页面">
+      <div class="s-deconstruction-container">
+        
+        <!-- 左侧 S 关卡索引栏 -->
+        <div class="s-sidebar-stages">
+          <div class="s-sidebar-header">
+            <span>PHYSIOLOGY CODEX</span>
+            <span>SPEC: S-02</span>
+          </div>
+
+          <div class="s-stage-item active" data-s-target="halo">
+            <div class="s-stage-code">LT-S-01</div>
+            <div class="s-stage-name">光环构造与发射频段</div>
+          </div>
+
+          <div class="s-stage-item" data-s-target="wings">
+            <div class="s-stage-code">LT-S-02</div>
+            <div class="s-stage-name">光翼源石活性位移矢量</div>
+          </div>
+
+          <div class="s-stage-item" data-s-target="empathy">
+            <div class="s-stage-code">LT-S-03</div>
+            <div class="s-stage-name">共感网络与同族同理共情</div>
+          </div>
+
+          <div class="s-stage-item" data-s-target="fallen">
+            <div class="s-stage-code">LT-S-04</div>
+            <div class="s-stage-name">堕天异化：角质化与断联</div>
+          </div>
+        </div>
+
+        <!-- 中间高精度萨科塔维特鲁威人主矢量解构图解 -->
+        <div class="s-center-anatomy">
+          <div class="vitruvian-canvas-wrap">
+            <svg class="vitruvian-svg" viewBox="0 0 520 400" fill="none">
+              <!-- 达·芬奇黄金比例几何辅助线：正交外接圆与基准方形 -->
+              <circle cx="260" cy="200" r="175" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 3"/>
+              <rect x="85" y="25" width="350" height="350" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 3"/>
+              
+              <!-- 黄金对角线与正交基准天轴 -->
+              <line x1="260" y1="10" x2="260" y2="390" stroke="var(--color-blue-axis)" stroke-width="1.5" stroke-dasharray="6 2"/>
+              <line x1="70" y1="200" x2="450" y2="200" stroke="#CBD5E1" stroke-width="1"/>
+              <line x1="85" y1="25" x2="435" y2="375" stroke="#E2E8F0" stroke-width="0.8"/>
+              <line x1="85" y1="375" x2="435" y2="25" stroke="#E2E8F0" stroke-width="0.8"/>
+
+              <!-- 头部实体神圣光环 (点击热区 1) -->
+              <g id="hotspotHalo" class="interactive-hotspot">
+                <ellipse cx="260" cy="58" rx="52" ry="14" stroke="var(--color-halo-gold-bright)" stroke-width="3" fill="rgba(245, 158, 11, 0.18)"/>
+                <ellipse cx="260" cy="58" rx="66" ry="18" stroke="var(--color-halo-gold)" stroke-width="1" stroke-dasharray="3 3"/>
+                <!-- 刻度与测绘引线 -->
+                <line x1="312" y1="58" x2="385" y2="58" stroke="var(--color-blue-axis)" stroke-width="1.2"/>
+                <circle cx="385" cy="58" r="2.5" fill="var(--color-blue-axis)"/>
+                <text x="392" y="62" fill="var(--color-blue-axis)" font-family="monospace" font-size="11" font-weight="bold">[01] HALO_DIA: 104mm</text>
+              </g>
+
+              <!-- 背部多阶源石光翼 (点击热区 2) -->
+              <g id="hotspotWings" class="interactive-hotspot">
+                <!-- 左侧光翼晶体羽翼 -->
+                <path d="M 248 140 C 190 105, 120 90, 85 55 C 120 105, 185 150, 246 158 Z" fill="rgba(2, 132, 199, 0.22)" stroke="var(--color-blue-axis)" stroke-width="1.8"/>
+                <path d="M 248 152 C 180 145, 115 155, 75 135 C 125 168, 195 180, 246 172 Z" fill="rgba(2, 132, 199, 0.16)" stroke="var(--color-blue-axis)" stroke-width="1.4"/>
+                <!-- 右侧光翼晶体羽翼 -->
+                <path d="M 272 140 C 330 105, 400 90, 435 55 C 400 105, 335 150, 274 158 Z" fill="rgba(2, 132, 199, 0.22)" stroke="var(--color-blue-axis)" stroke-width="1.8"/>
+                <path d="M 272 152 C 340 145, 405 155, 445 135 C 395 168, 325 180, 274 172 Z" fill="rgba(2, 132, 199, 0.16)" stroke="var(--color-blue-axis)" stroke-width="1.4"/>
+                <!-- 位移测量引线 -->
+                <line x1="435" y1="55" x2="475" y2="85" stroke="var(--color-blue-axis)" stroke-width="1"/>
+                <text x="410" y="100" fill="var(--color-blue-axis)" font-family="monospace" font-size="10">[02] DISPLACEMENT: +34.2°</text>
+              </g>
+
+              <!-- 维特鲁威萨科塔白色主教/执行官服装躯干剪影 -->
+              <!-- 头部与修长脖颈 -->
+              <circle cx="260" cy="98" r="18" fill="#FFFFFF" stroke="#334155" stroke-width="2"/>
+              <!-- 主教礼袍/执行人战术风衣躯干 (精雕剪影) -->
+              <path d="M 248 116 L 272 116 L 285 220 L 235 220 Z" fill="#FFFFFF" stroke="#334155" stroke-width="2"/>
+              <!-- 垂落的蓝色圣带 (Liturgical Stole) -->
+              <path d="M 254 116 L 254 210 L 258 215 L 262 210 L 262 116 Z" fill="var(--color-blue-axis)"/>
+              
+              <!-- 下肢：维特鲁威双态步态 -->
+              <!-- 姿态 1：正立基准 -->
+              <line x1="246" y1="220" x2="238" y2="340" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+              <line x1="274" y1="220" x2="282" y2="340" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+              <!-- 姿态 2：跨立张角触及圆周 -->
+              <line x1="246" y1="220" x2="195" y2="330" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round"/>
+              <line x1="274" y1="220" x2="325" y2="330" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round"/>
+
+              <!-- 维特鲁威多重手臂姿态叠加 (6只手臂展现不同神性/战术状态) -->
+              <!-- 手臂姿态 A：平举平齐黄金正方形边缘 (水平张力) -->
+              <line x1="248" y1="126" x2="120" y2="126" stroke="var(--color-blue-axis)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="272" y1="126" x2="400" y2="126" stroke="var(--color-blue-axis)" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- 手臂姿态 B：向上45度触及外接圆周 (祈祷与同理共感) -->
+              <line x1="248" y1="126" x2="148" y2="72" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+              <line x1="272" y1="126" x2="372" y2="72" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+              <!-- 手臂姿态 C：向前持守护铳战术姿态 (公证所执行人) -->
+              <line x1="248" y1="126" x2="185" y2="170" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="4 3" stroke-linecap="round"/>
+              <line x1="272" y1="126" x2="335" y2="170" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="4 3" stroke-linecap="round"/>
+              <!-- 守护铳简明战术矢量轮廓 -->
+              <rect x="330" y="162" width="28" height="10" rx="1" fill="#334155"/>
+              <rect x="345" y="172" width="6" height="8" rx="1" fill="#334155"/>
+            </svg>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-blue-axis); letter-spacing: 0.08em; margin-top: 4px;">
+            [INTERACTIVE: 点击图解中的光环 [01] 与光翼 [02] 调阅生理测绘参数]
+          </div>
+        </div>
+
+        <!-- 右侧人物头像线稿与解剖实时数据 (S 页面右侧经典头像线稿) -->
+        <div class="s-right-inspect">
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-blue-axis); margin-bottom: 6px; font-weight: bold;">
+              CRANIAL PROFILE ARCHIVE // 侧脸线稿测绘
+            </div>
+            <div class="inspect-face-box">
+              <svg width="180" height="150" viewBox="0 0 180 150" fill="none">
+                <!-- 萨科塔优雅侧脸精细线稿与十字瞄准线 -->
+                <line x1="20" y1="75" x2="160" y2="75" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="3 3"/>
+                <line x1="90" y1="15" x2="90" y2="135" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="3 3"/>
+                <!-- 头顶悬浮光环截面 -->
+                <ellipse cx="90" cy="28" rx="36" ry="8" stroke="var(--color-halo-gold)" stroke-width="2" fill="rgba(245, 158, 11, 0.12)"/>
+                <!-- 额骨、鼻梁、嘴唇、下颌精细轮廓 -->
+                <path d="M 75 42 Q 92 48 94 65 L 110 82 L 96 86 L 98 94 L 92 98 L 94 108 Q 80 120 65 125" stroke="#334155" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <!-- 耳部神圣羽翎意象 (Sankta Ear Winglet) -->
+                <path d="M 68 85 Q 50 75 42 62 Q 55 78 72 88" stroke="var(--color-blue-axis)" stroke-width="1.5" fill="rgba(2, 132, 199, 0.1)"/>
+                <circle cx="94" cy="72" r="2.5" fill="var(--color-blue-axis)"/>
+                <text x="100" y="74" fill="var(--color-blue-axis)" font-family="monospace" font-size="9">OPTIC_AXIS</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="inspect-data-terminal" id="sInspectData">
+            <div class="inspect-data-row">
+              <span>TARGET</span>
+              <strong style="color: var(--color-blue-axis);">CRANIAL HALO [01]</strong>
+            </div>
+            <div class="inspect-data-row">
+              <span>EMISSION</span>
+              <span>ORIGINIUM 482nm (CONTINUOUS)</span>
+            </div>
+            <div class="inspect-data-row">
+              <span>CONSENSUS</span>
+              <span>NORMAL (ACTIVE LINK 99.8%)</span>
+            </div>
+            <div class="inspect-data-row">
+              <span>HORN STATUS</span>
+              <span>NULL (NON-FALLEN / CLEAN)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 抽屉式深度卷宗阅读视窗 (Dossier Drawer) -->
+  <aside class="dossier-drawer" id="dossierDrawer" aria-label="拉特兰圣堂深度卷宗">
+    <div class="drawer-header">
+      <div class="drawer-code-group">
+        <span class="drawer-code" id="drawerStageCode">DOSSIER // LT-01</span>
+        <span class="drawer-badge">CURIA CONFIDENTIAL</span>
+      </div>
+      <button class="drawer-close-btn" id="drawerCloseBtn" title="关闭档案">✕</button>
+    </div>
+
+    <div class="drawer-body" id="drawerBodyContent">
+      <!-- 动态加载文章内容与交互工具 -->
+    </div>
+  </aside>
+
+  <!-- 底部模式与状态切换组 (众生行记经典底部选关栏) -->
+  <footer class="bottom-hud-bar">
+    <div class="bottom-info-strip">
+      <span>MODE SELECTOR:</span>
+      <span style="color: var(--color-text-primary); font-weight: 700;" id="bottomStatusIndicator">普通行记 (NORMAL)</span>
+      <span>•</span>
+      <span>CLEARANCE: 13 ARTICLES</span>
+      <span>•</span>
+      <span>NOTARIAL SEAL: VERIFIED</span>
+    </div>
+
+    <div class="mode-switch-group">
+      <button class="mode-tab-btn active" id="btnModeNormal">
+        <span>01</span> 普通 · 众生行记
+      </button>
+      <button class="mode-tab-btn btn-ex" id="btnModeEx">
+        <span>EX</span> 突袭 · 峰会危局
+      </button>
+      <button class="mode-tab-btn btn-s" id="btnModeS">
+        <span>S</span> 绝境 · 圣徒解构
+      </button>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       12. INTERACTIVE SCRIPT LOGIC // 鹰角声效与全景交互引擎
+       ========================================================================== -->
+  <script>
+    (function() {
+      'use strict';
+
+      // --- 1. 深度世界观公证卷宗字典 (基于官方 PRTS 考据、干员语音与剧透分级) ---
+      const DOSSIER_DATABASE = {
+        'LT-01': {
+          code: 'DOSSIER // LT-01',
+          title: '圣城与穹顶制度',
+          sub: 'Civitas & Ordo / 移动城邦联合体与公民十三权利',
+          quoteSpeaker: '教皇 伊万杰利斯塔十一世',
+          quoteText: '“世人皆道拉特兰是天国遗留在泰拉的孤岛，但他们未曾看见高墙之下，支撑这片净土的，是千百年来每一位公民对神圣契约的绝对服从。”',
+          content: `
+            <p><strong>地缘与政体格局：</strong>拉特兰城（Civitatis Lateranense）坐落于泰拉大陆中西部，周边被维多利亚、叙拉古、雷姆必拓与伊比利亚等大国环抱。城邦由数个以白色大理石与精金筑成的巨型移动地块组合而成，是泰拉世界仅存的完全政教合一神权政治实体。</p>
+            <p><strong>教廷枢机处（Curia）：</strong>由教皇伊万杰利斯塔十一世统辖，下设七大厅/裁判所（Tribunals）：第一厅主管枢秘礼制与教义阐释；第五厅掌管治安执法与公证契约；第六厅负责城邦民生救济；第七厅统帅宗座使节与涉外谍报。</p>
+            <p><strong>公民十三权利与第二阶层：</strong>萨科塔人受《十三宪条》严格保障，享有包括随身持枪、财产神圣与在不侵犯他人权益前提下的自由爆破权。然而，历史上大量移入的伊比利亚黎博利（Liberi）后裔虽融入市井，但在教规和司法层面上长期处于隐性第二等公民地位，部分群体的权益诉求成为城邦内部的潜流。</p>
+            <p><strong>感染者特别法案：</strong>确诊矿石病的萨科塔公民必须迁出城邦常驻核心区，但破天荒地终生保留其“拉特兰公民身份”与公证继承权，体现出城邦制度冷酷算计与神学仁慈的奇特共存。</p>
+          `
+        },
+        'LT-02': {
+          code: 'DOSSIER // LT-02',
+          title: '公证所法统与法定执行人',
+          sub: 'Secretaria Notariorum / 契约仲裁与遗物追索强制权',
+          quoteSpeaker: '法定执行人 费德里科 (送葬人)',
+          quoteText: '“根据《公证所条例》第412条，逝者的守护铳必须由执行人回收并送归大圣堂。若当事人拒绝配合，我已获准行使强制执行权——这并非报复，仅是法律程序的必要闭环。”',
+          content: `
+            <p><strong>公证所法统：</strong>拉特兰公证所（Secretaria Notariorum Curiae Laterani）隶属于教廷第五裁判所，是城邦的立法与强制执行机关，直接监督公民十三权利的履行。</p>
+            <p><strong>执行官体系（Executors）：</strong>公证所拥有专属武装执行人，以逻辑严密、情感淡漠著称。他们日常负责遗产继承公证、失踪宣告、火药执照核验，以及全拉特兰最神圣的职责——<strong>无条件收回已逝公民的守护铳</strong>。</p>
+            <p><strong>萨卡兹通缉体制：</strong>由于数千年的历史世仇，公证所建有对卡兹戴尔涉案战犯的泰拉通用通缉令，即使在荒原与无主之地亦具备跨国拘捕执行力。</p>
+          `
+        },
+        'LT-03': {
+          code: 'DOSSIER // LT-03',
+          title: '光环与共感机制',
+          sub: 'Consensus & Empathy / 种族生理奇迹与堕天惩戒',
+          quoteSpeaker: '莫斯提马 (堕天使)',
+          quoteText: '“当共感网络断开、光环熄灭的那一瞬间，整个世界其实意外地清静呢……不过，那对黑色小角偶尔撞到门框还是挺让人烦恼的。”',
+          content: `
+            <p><strong>光环（Halo）与光翼：</strong>萨科塔人头顶的发光圆环具有微弱物理实体与常温发光特性，是源石技艺在神经系统的特化器官。背后光翼则随情绪共振与施术强度产生高能偏振。</p>
+            <p><strong>共感网络（Consensus）：</strong>所有非堕天萨科塔人之间通过光环无延迟共享潜意识情绪。同伴的悲伤、善意或恐惧皆如涟漪般透明互通，这使得萨科塔社会免于隐瞒与恶意谋杀，构成了圣城极高信任度的生理基石。</p>
+            <p><strong>堕天的残酷惩罚：</strong>严禁萨科塔朝同胞开枪自相残杀。一旦违背，光环即刻失去光彩、破裂畸变；额头生出黑色角质尖角（萨卡兹同源返祖现象）；更毁灭性的是，该个体被永久断绝与同胞的情感共感网络，成为被全族遗弃的“堕天使”（如莫斯提马）。</p>
+          `
+        },
+        'LT-04': {
+          code: 'DOSSIER // LT-04',
+          title: '守护铳与合法爆破情趣',
+          sub: 'Patron Firearms / 军工垄断与火药世俗生活',
+          quoteSpeaker: '蕾缪安',
+          quoteText: '“在拉特兰，每一个成年萨科塔人的守护铳都浸透着他们自己的脾气。枪口擦拭得越干净，庭院里的炸药就装配得越大胆——这就是我们的生活。”',
+          content: `
+            <p><strong>万铳之国垄断：</strong>拉特兰是泰拉大陆唯一普及且严密封锁源石铳械制造技术的国度。每位萨科塔成年受洗时均获批专属“守护铳”，终身不得买卖转让，死后由公证所无条件追回。</p>
+            <p><strong>合法爆破文化：</strong>萨科塔人极度热爱机械改装与炸药调配。法律规定只要未造成人员伤亡且不侵害公共权益，市民在自家庭院炸毁、改造房屋属于受法律保护的“日常生活情趣”。</p>
+          `,
+          interactive: 'gun'
+        },
+        'LT-05': {
+          code: 'DOSSIER // LT-05',
+          title: '甜度教派与升天欢庆',
+          sub: 'Dulce & Gelato / 冰淇淋崇拜与豁达生死观',
+          quoteSpeaker: '能天使 (Lemuen)',
+          quoteText: '“苹果派！必须是刚烤出炉、加足了肉桂和枫糖浆的苹果派！如果葬礼上没有香甜的苹果派和热咖啡，那我可不同意天使们升天！”',
+          content: `
+            <p><strong>高糖甜点狂热：</strong>拉特兰人对糖分的痴迷享誉大陆。街道上有全天候巡游的自动 Gelato 贩售机甲，苹果派、肉桂甜塔是主食级标配，甚至连教皇也常常在枢机辩论间隙品尝限量冰淇淋。</p>
+            <p><strong>升天欢庆葬礼：</strong>萨科塔人看待死亡极其从容。亲友聚在安魂教堂，共同品尝死者生前喜爱的甜馅饼与咖啡，在欢快圣乐中合唱赞美诗，祝贺灵魂卸下肉身沉重枷锁升入天国。</p>
+          `,
+          interactive: 'gelato'
+        },
+        'LT-06': {
+          code: 'DOSSIER // LT-06',
+          title: '圣所与修道院散记',
+          sub: 'Loci Sacri / 大圣堂、钟楼与失落的避难所',
+          quoteSpeaker: '空弦 (席兰特)',
+          quoteText: '“兰登修道院虽然历史悠久，但现在真的快破产了！各位如果路过，请务必尝尝修士们亲手酿造的高浓度黑麦啤酒和大面包呀！”',
+          content: `
+            <p><strong>万国大圣堂（The Basilica）：</strong>教廷枢密驻地，地下直通埋葬历代圣徒的安息墓道，最深处即为冷酷运转的“律法”计算机中枢。</p>
+            <p><strong>启示之塔（Tower of Revelations）：</strong>拉特兰立城之始的古老钟楼，千年不响的大钟见证了萨科塔的诞生与变革。</p>
+            <p><strong>安布罗修修道院（Sanctilaminium Ambrosii）：</strong>失联数十年的移动板块遗迹，萨科塔、黎博利与萨卡兹曾在此抱团取暖，最终在信任崩溃中走向瓦解（见《空想花庭》）。</p>
+            <p><strong>兰登修道院（Landen Monastery）：</strong>空弦的故乡，原本是宗座骑士团演训地，因和平年代断炊濒临破产，修士们靠酿造高浓度啤酒和烘焙大面包维系生计。</p>
+          `
+        },
+        'LT-07': {
+          code: 'DOSSIER // LT-07',
+          title: '万国峰会破壁与律法真相',
+          sub: 'The Law Revealed / 前文明机械主机的冰冷演算',
+          quoteSpeaker: '寻路者 安多恩',
+          quoteText: '“如果苦难从不分种族地降临在这片大地上，那为什么神圣的律法，却只允许萨科塔的光环拥有共感的救赎？告诉我，律法，你的慈悲究竟属于谁？！”',
+          content: `
+            <p><strong>万国峰会与《拉特兰宣言》：</strong>泰拉历1099年春，教皇宣布不再固守千身高墙，敲响启示之钟，向全泰拉开放互信之门。</p>
+            <p><strong>绝密：律法的物理实体（深度剧透）：</strong>地表信徒顶礼膜拜的“律法”，在大圣堂地下墓穴深处，其实是一台<strong>前文明遗留的黑色超算机械主机</strong>。</p>
+          `,
+          interactive: 'law'
+        }
+      };
+
+      // --- 2. 动态柔和水光画布渲染引擎 (莫奈水光氛围层与微光尘埃) ---
+      const canvas = document.getElementById('waterlightCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let lightBlobs = [];
+      let motes = [];
+
+      function resizeCanvas() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initWaterlightSystem();
+      }
+
+      function initWaterlightSystem() {
+        // 柔和水光弥散光斑 (仿莫奈《查令十字桥》粉蓝紫金光色)
+        lightBlobs = [
+          { x: width * 0.5, y: height * 0.28, r: width * 0.42, vx: 0.12, vy: 0.08, color: 'rgba(219, 234, 254, 0.58)' },
+          { x: width * 0.22, y: height * 0.68, r: width * 0.36, vx: -0.1, vy: 0.06, color: 'rgba(224, 231, 255, 0.42)' },
+          { x: width * 0.82, y: height * 0.72, r: width * 0.38, vx: 0.08, vy: -0.1, color: 'rgba(254, 243, 199, 0.32)' },
+          { x: width * 0.5, y: height * 0.9, r: width * 0.3, vx: -0.05, vy: -0.05, color: 'rgba(237, 233, 254, 0.28)' }
+        ];
+
+        // 悬浮神圣微光粒子
+        motes = [];
+        for (let i = 0; i < 35; i++) {
+          motes.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            size: Math.random() * 2 + 1,
+            alpha: Math.random() * 0.5 + 0.2,
+            speedY: Math.random() * 0.25 + 0.1,
+            pulse: Math.random() * Math.PI
+          });
+        }
+      }
+
+      function renderWaterlight() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 绘制多重水光径向渐变
+        lightBlobs.forEach(function(b) {
+          b.x += b.vx;
+          b.y += b.vy;
+          if (b.x - b.r > width || b.x + b.r < 0) b.vx *= -1;
+          if (b.y - b.r > height || b.y + b.r < 0) b.vy *= -1;
+
+          const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+          grad.addColorStop(0, b.color);
+          grad.addColorStop(1, 'rgba(243, 246, 250, 0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, width, height);
+        });
+
+        // 绘制微光粒子漂浮
+        motes.forEach(function(m) {
+          m.y -= m.speedY;
+          m.pulse += 0.02;
+          if (m.y < 0) m.y = height;
+
+          const currentAlpha = m.alpha * (0.6 + 0.4 * Math.sin(m.pulse));
+          ctx.fillStyle = `rgba(29, 78, 216, ${currentAlpha * 0.35})`;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        requestAnimationFrame(renderWaterlight);
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      renderWaterlight();
+
+      // --- 3. Web Audio 原生鹰角高精音效引擎 (零外部依赖，多频段合成) ---
+      let audioCtx = null;
+      let soundActive = true;
+
+      function getAudioContext() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      // 鹰角双脉冲极简界面点击声
+      function playUiClick(freq = 1400) {
+        if (!soundActive) return;
+        try {
+          const actx = getAudioContext();
+          if (!actx) return;
+          const osc1 = actx.createOscillator();
+          const osc2 = actx.createOscillator();
+          const gain = actx.createGain();
+
+          osc1.type = 'sine';
+          osc2.type = 'triangle';
+          osc1.frequency.setValueAtTime(freq, actx.currentTime);
+          osc2.frequency.setValueAtTime(freq * 2, actx.currentTime);
+
+          gain.gain.setValueAtTime(0.07, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.035);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(actx.destination);
+
+          osc1.start();
+          osc2.start();
+          osc1.stop(actx.currentTime + 0.035);
+          osc2.stop(actx.currentTime + 0.035);
+        } catch (e) {}
+      }
+
+      // 模式切换沉浸空间音效
+      function playModeSwoosh(isCrisis = false) {
+        if (!soundActive) return;
+        try {
+          const actx = getAudioContext();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+
+          osc.type = isCrisis ? 'sawtooth' : 'sine';
+          const startF = isCrisis ? 180 : 320;
+          const endF = isCrisis ? 540 : 780;
+
+          osc.frequency.setValueAtTime(startF, actx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(endF, actx.currentTime + 0.12);
+
+          gain.gain.setValueAtTime(0.08, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.14);
+
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.14);
+        } catch (e) {}
+      }
+
+      // 启示大钟沉郁铜钟长音合成
+      function playCathedralBell() {
+        if (!soundActive) return;
+        try {
+          const actx = getAudioContext();
+          if (!actx) return;
+          const harmonics = [110, 220, 330, 550, 880];
+          harmonics.forEach(function(freq, idx) {
+            const osc = actx.createOscillator();
+            const gain = actx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, actx.currentTime);
+
+            const initialGain = 0.12 / (idx + 1);
+            gain.gain.setValueAtTime(initialGain, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 3.2);
+
+            osc.connect(gain);
+            gain.connect(actx.destination);
+            osc.start();
+            osc.stop(actx.currentTime + 3.2);
+          });
+        } catch (e) {}
+      }
+
+      // 音效开关
+      const soundToggleBtn = document.getElementById('soundToggleBtn');
+      const soundIcon = document.getElementById('soundIcon');
+      soundToggleBtn.addEventListener('click', function() {
+        soundActive = !soundActive;
+        soundIcon.textContent = soundActive ? '🔊' : '🔇';
+        soundToggleBtn.classList.toggle('active', soundActive);
+        if (soundActive) playUiClick(1600);
+      });
+
+      // --- 4. 众生行记三态模式切换控制器 (普通 / EX / S) ---
+      const btnModeNormal = document.getElementById('btnModeNormal');
+      const btnModeEx = document.getElementById('btnModeEx');
+      const btnModeS = document.getElementById('btnModeS');
+      const modeCanvasNormal = document.getElementById('modeNormal');
+      const modeCanvasEx = document.getElementById('modeEx');
+      const modeCanvasS = document.getElementById('modeS');
+      const hudStatusPill = document.getElementById('hudStatusPill');
+      const bottomStatusIndicator = document.getElementById('bottomStatusIndicator');
+      const coordReadout = document.getElementById('coordReadout');
+
+      function setStageMode(mode) {
+        playModeSwoosh(mode === 'ex');
+
+        // 重置所有模式状态
+        document.body.classList.remove('mode-normal', 'mode-ex', 'mode-s');
+        document.body.classList.add('mode-' + mode);
+
+        btnModeNormal.classList.toggle('active', mode === 'normal');
+        btnModeEx.classList.toggle('active', mode === 'ex');
+        btnModeS.classList.toggle('active', mode === 's');
+
+        modeCanvasNormal.classList.toggle('active', mode === 'normal');
+        modeCanvasEx.classList.toggle('active', mode === 'ex');
+        modeCanvasS.classList.toggle('active', mode === 's');
+
+        if (mode === 'normal') {
+          hudStatusPill.textContent = 'NORMAL // 众生行记';
+          bottomStatusIndicator.textContent = '普通行记 (NORMAL)';
+          coordReadout.textContent = 'AXIS: 0.000 // STAGE: 01';
+        } else if (mode === 'ex') {
+          hudStatusPill.textContent = 'CRISIS // 峰会危局';
+          bottomStatusIndicator.textContent = '突袭危局 (EX-CONCENTRIC)';
+          coordReadout.textContent = 'RADIAL: CONCENTRIC // HAZARD';
+        } else if (mode === 's') {
+          hudStatusPill.textContent = 'DECONSTRUCT // 圣徒解构';
+          bottomStatusIndicator.textContent = '绝境解构 (S-VITRUVIAN)';
+          coordReadout.textContent = 'ANATOMY: HALO & CONSENSUS';
+        }
+      }
+
+      btnModeNormal.addEventListener('click', function() { setStageMode('normal'); });
+      btnModeEx.addEventListener('click', function() { setStageMode('ex'); });
+      btnModeS.addEventListener('click', function() { setStageMode('s'); });
+
+      // --- 5. 抽屉式深度卷宗阅读器控制器 ---
+      const dossierDrawer = document.getElementById('dossierDrawer');
+      const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+      const drawerStageCode = document.getElementById('drawerStageCode');
+      const drawerBodyContent = document.getElementById('drawerBodyContent');
+      const drawerDirectBtn = document.getElementById('drawerDirectBtn');
+
+      function openDossier(nodeKey) {
+        const data = DOSSIER_DATABASE[nodeKey] || DOSSIER_DATABASE['LT-01'];
+        playUiClick(1200);
+
+        drawerStageCode.textContent = data.code;
+        let html = `
+          <h2 class="drawer-article-title">${data.title}</h2>
+          <span class="drawer-article-sub">${data.sub}</span>
+        `;
+
+        // 附加入境角色标志性语录卡片
+        if (data.quoteSpeaker && data.quoteText) {
+          html += `
+            <div class="drawer-quote-card">
+              <div class="quote-speaker">${data.quoteSpeaker}</div>
+              <div class="quote-content">${data.quoteText}</div>
+            </div>
+          `;
+        }
+
+        html += data.content;
+
+        // 附加守护铳合规查询工具
+        if (data.interactive === 'gun') {
+          html += `
+            <div class="gun-app-box">
+              <div class="gun-app-title">NOTARIAL HALL // 第五裁判所守护铳配给合规核验终端</div>
+              <div class="gun-input-group">
+                <select class="gun-select" id="gunCitizenType">
+                  <option value="sankta">萨科塔神圣公民 (Sankta)</option>
+                  <option value="liberi">拉特兰黎博利居民 (Liberi)</option>
+                  <option value="other">外邦旅居者 (Other Terran)</option>
+                  <option value="fallen">堕天异化萨科塔 (Fallen)</option>
+                </select>
+                <select class="gun-select" id="gunModelType">
+                  <option value="std">标准型终身守护铳 (Patron Model)</option>
+                  <option value="heavy">宗座骑士团重型铳炮 (Heavy Model)</option>
+                </select>
+                <button class="gun-check-btn" id="btnRunGunCheck">核验</button>
+              </div>
+              <div class="gun-result-box" id="gunResultMsg">
+                选择公民身份与申请铳型以校验教廷公证所配给权限。
+              </div>
+            </div>
+          `;
+        }
+
+        // 附加甜品工坊组件
+        if (data.interactive === 'gelato') {
+          html += `
+            <div class="gelato-lab-box">
+              <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #B45309; font-weight: bold; margin-bottom: 6px;">
+                GELATO SYNTHESIZER // 圣城高糖配方研制机
+              </div>
+              <p style="font-size: 0.85rem; color: #78350F; margin-bottom: 8px;">
+                调制专属拉特兰冰淇淋：选择甜度饱和度与碳酸爆破系数，体验萨科塔狂热甜食文化。
+              </p>
+              <div style="display: flex; gap: 8px;">
+                <select class="gun-select" id="gelatoFlavor">
+                  <option value="apple">能天使特制浓郁肉桂苹果派味</option>
+                  <option value="mint">教皇同款特调海盐薄荷圣代</option>
+                  <option value="gunpowder">火药微粒爆爆糖限定款</option>
+                </select>
+                <button class="gun-check-btn" id="btnMixGelato" style="background:#D97706;">调制</button>
+              </div>
+              <div class="gun-result-box" id="gelatoResultMsg" style="margin-top: 8px;">
+                点击调制以生成教廷甜点厅特许品鉴报告。
+              </div>
+            </div>
+          `;
+        }
+
+        // 附加律法机密揭秘工具与撞钟仪式
+        if (data.interactive === 'law') {
+          html += `
+            <div class="bell-ritual-box">
+              <div style="font-family: var(--font-display); font-size: 1.4rem; letter-spacing: 0.06em;">
+                TOWER OF REVELATIONS // 启示之塔撞钟仪式
+              </div>
+              <p style="font-size: 0.85rem; color: #94A3B8; margin-top: 4px;">
+                击响千年未鸣之大钟，向泰拉大陆宣告《拉特兰宣言》之破壁。
+              </p>
+              <button class="bell-strike-btn" id="btnStrikeBell">
+                🔔 敲响启示之钟
+              </button>
+              <div id="bellEchoMsg" style="font-family: var(--font-mono); font-size: 0.78rem; color: #FCD34D; margin-top: 8px; min-height: 20px;"></div>
+            </div>
+
+            <div class="classified-box">
+              <div class="classified-title">
+                <span>CLASSIFIED LEVEL 5 // PONTIFICAL ARCHIVE</span>
+                <span>DE PROFUNDIS</span>
+              </div>
+              <p class="classified-text-preview">
+                大圣堂墓穴深处的绝对实体包含全泰拉最高机密，涉及萨科塔与特卡兹同源演化真相。
+              </p>
+              <button class="btn-decrypt" id="btnDecryptAction">
+                ⚡ 验证公证所执行人权限 · 揭示前文明主机
+              </button>
+              <div class="decrypted-content" id="decryptedArea">
+                <strong style="color: #38BDF8;">【保存者 弗里斯顿核心日志摘要】：</strong><br>
+                “律法并非神明，而是一台忠实执行算法的前文明冷酷超算主机。其硬编码指令唯有一条——『延续萨科塔族群的存续』。所谓同胞共感网络与同胞相残堕天的红线，纯粹是它为避免族群自我内耗计算出的最优控制模型。”
+              </div>
+            </div>
+          `;
+        }
+
+        drawerBodyContent.innerHTML = html;
+        dossierDrawer.classList.add('open');
+
+        // 绑定律法解密事件
+        const btnDecrypt = document.getElementById('btnDecryptAction');
+        if (btnDecrypt) {
+          btnDecrypt.addEventListener('click', function() {
+            playUiClick(1800);
+            document.getElementById('decryptedArea').classList.add('active');
+            btnDecrypt.style.display = 'none';
+          });
+        }
+
+        // 绑定敲钟仪式事件
+        const btnStrikeBell = document.getElementById('btnStrikeBell');
+        if (btnStrikeBell) {
+          btnStrikeBell.addEventListener('click', function() {
+            playCathedralBell();
+            const msg = document.getElementById('bellEchoMsg');
+            msg.innerHTML = '钟声回荡于大圣堂穹顶……《拉特兰宣言》公布于世：“高墙已倾，愿大地倾听吾等之声。”';
+          });
+        }
+
+        // 绑定守护铳核验事件
+        const btnRunGun = document.getElementById('btnRunGunCheck');
+        if (btnRunGun) {
+          btnRunGun.addEventListener('click', function() {
+            playUiClick(1100);
+            const cit = document.getElementById('gunCitizenType').value;
+            const res = document.getElementById('gunResultMsg');
+            if (cit === 'sankta') {
+              res.innerHTML = '<span style="color:#16A34A; font-weight:bold;">✔ 准予终身配给</span>：萨科塔成年礼神圣所有权，死后由公证所执行人完好回收。';
+            } else if (cit === 'liberi') {
+              res.innerHTML = '<span style="color:#CA8A04; font-weight:bold;">▲ 附条件核准</span>：黎博利限自卫民用铳，需由第五裁判所三名公民联名出具道德担保。';
+            } else if (cit === 'fallen') {
+              res.innerHTML = '<span style="color:#DC2626; font-weight:bold;">✖ 永久绝对禁绝</span>：堕天使失去神圣法统，触碰铳械将触发防卫警报。';
+            } else {
+              res.innerHTML = '<span style="color:#DC2626; font-weight:bold;">✖ 查扣</span>：外邦居民严禁随身携带军备铳械，由公证所执行人无条件收缴。';
+            }
+          });
+        }
+
+        // 绑定 Gelato 甜品调制事件
+        const btnMixGelato = document.getElementById('btnMixGelato');
+        if (btnMixGelato) {
+          btnMixGelato.addEventListener('click', function() {
+            playUiClick(1500);
+            const flv = document.getElementById('gelatoFlavor').value;
+            const res = document.getElementById('gelatoResultMsg');
+            if (flv === 'apple') {
+              res.innerHTML = '<span style="color:#D97706; font-weight:bold;">★ 甜度评级：SSS</span> 能天使连声赞叹：“太棒了！这就是圣城街道最好的味道！”';
+            } else if (flv === 'mint') {
+              res.innerHTML = '<span style="color:#0284C7; font-weight:bold;">★ 甜度评级：SS</span> 教皇品尝后点头：“枢机辩论的疲惫在一瞬间烟消云散。”';
+            } else {
+              res.innerHTML = '<span style="color:#DC2626; font-weight:bold;">★ 爆破评级：MAX</span> 庭院微型爆破达标！菲亚梅塔警惕地后退了三步。';
+            }
+          });
+        }
+      }
+
+      drawerCloseBtn.addEventListener('click', function() {
+        playUiClick(800);
+        dossierDrawer.classList.remove('open');
+      });
+
+      drawerDirectBtn.addEventListener('click', function() {
+        openDossier('LT-01');
+      });
+
+      // 关卡节点点击交互
+      const stageCards = document.querySelectorAll('.stage-card-node');
+      stageCards.forEach(function(card) {
+        card.addEventListener('click', function() {
+          stageCards.forEach(function(c) { c.classList.remove('selected'); });
+          card.classList.add('selected');
+          const nodeKey = card.getAttribute('data-node');
+          openDossier(nodeKey);
+        });
+      });
+
+      // EX 模式下的事件按钮与时间线项
+      const exReadDetailBtn = document.getElementById('exReadDetailBtn');
+      if (exReadDetailBtn) {
+        exReadDetailBtn.addEventListener('click', function() {
+          openDossier('LT-07');
+        });
+      }
+
+      const exTimelineItems = document.querySelectorAll('.ex-timeline-item');
+      exTimelineItems.forEach(function(item) {
+        item.addEventListener('click', function() {
+          openDossier('LT-07');
+        });
+      });
+
+      // S 模式交互热点与侧边栏
+      const hotspotHalo = document.getElementById('hotspotHalo');
+      const hotspotWings = document.getElementById('hotspotWings');
+      const sInspectData = document.getElementById('sInspectData');
+
+      if (hotspotHalo && sInspectData) {
+        hotspotHalo.addEventListener('click', function() {
+          playUiClick(1650);
+          sInspectData.innerHTML = `
+            <div class="inspect-data-row">
+              <span>TARGET</span>
+              <strong style="color: var(--color-halo-gold);">SANCTUS HALO [01]</strong>
+            </div>
+            <div class="inspect-data-row">
+              <span>LUMINANCE</span>
+              <span>482nm CONTINUOUS AMBER</span>
+            </div>
+            <div class="inspect-data-row">
+              <span>CONSENSUS</span>
+              <span>100% UNIFORM NEURAL LINK</span>
+            </div>
+            <div class="inspect-data-row">
+              <span>FALLEN RISK</span>
+              <span>0.00% (PERFECTLY STABLE)</span>
+            </div>
+          `;
+        });
+      }
+
+      if (hotspotWings && sInspectData) {
+        hotspotWings.addEventListener('click', function() {
+          playUiClick(1900);
+          sInspectData.innerHTML = `
+            <div class="inspect-data-row">
+              <span>TARGET</span>
+              <strong style="color: var(--color-blue-axis);">WINGS OF LIGHT [02]</strong>
+            </div>
+            <div class="inspect-data-row">
+              <span>ACTIVE PHASE</span>
+              <span>ORIGINIUM CRYSTAL DISPERSAL</span>
+            </div>
+            <div class="inspect-data-row">
+              <span>REACTIONS</span>
+              <span>HIGH ARTS COUPLING (98.4%)</span>
+            </div>
+            <div class="inspect-data-row">
+              <span>DISPLACEMENT</span>
+              <span>VECTOR ANGLE +34.2°</span>
+            </div>
+          `;
+        });
+      }
+
+      const sStageItems = document.querySelectorAll('.s-stage-item');
+      sStageItems.forEach(function(item) {
+        item.addEventListener('click', function() {
+          sStageItems.forEach(function(i) { i.classList.remove('active'); });
+          item.classList.add('active');
+          const target = item.getAttribute('data-s-target');
+          if (target === 'halo') hotspotHalo.dispatchEvent(new Event('click'));
+          if (target === 'wings') hotspotWings.dispatchEvent(new Event('click'));
+          if (target === 'empathy' || target === 'fallen') openDossier('LT-03');
+        });
+      });
+
+    })();
+  </script>
+</body>
+</html>
