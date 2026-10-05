@@ -71,7 +71,7 @@ def curate_cg_category(src_cat_dir: Path, dst_cat_dir: Path):
     dst_cat_dir.mkdir(parents=True, exist_ok=True)
 
     # 遍历每个角色目录 (如 Character_01_Ayano, Character_02_Seira...)
-    char_folders = [d for d in src_cat_dir.iterdir() if d.is_dir()]
+    char_folders = [d for d in src_cat_dir.iterdir() if d.is_dir() and d.name not in ("Others", "Common_Others")]
     if not char_folders:
         # 若无角色子文件夹，直接处理根目录
         char_folders = [src_cat_dir]
@@ -120,7 +120,7 @@ def curate_sprites_category(src_cat_dir: Path, dst_cat_dir: Path):
 
     dst_cat_dir.mkdir(parents=True, exist_ok=True)
 
-    char_folders = [d for d in src_cat_dir.iterdir() if d.is_dir() and d.name != "Sprite_Parts"]
+    char_folders = [d for d in src_cat_dir.iterdir() if d.is_dir() and d.name not in ("Sprite_Parts", "Others", "Common_Others")]
     if not char_folders:
         char_folders = [src_cat_dir]
 

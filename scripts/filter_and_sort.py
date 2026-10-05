@@ -223,6 +223,12 @@ class UniversalCharacterClassifier:
         if m_stand2:
             return self.format_character_name(0, m_stand2.group(1))
 
+        # 收集卡与猫咪收藏图识别 (collectionCat_1, collectionCard_4 等)
+        m_col = re.search(r"collection(?:cat|card)[_\-](\d{1,2})", stem_lower)
+        if m_col:
+            cid = int(m_col.group(1))
+            return self.format_character_name(cid)
+
         # 场景过渡/事件变更特征识别 (c-1, c-2, change-4, change-9)
         m_change = re.match(r"^(?:c|change)[_\-](\d{1,2})(?:[_\-a-z0-9]|$)", stem_lower)
         if m_change:

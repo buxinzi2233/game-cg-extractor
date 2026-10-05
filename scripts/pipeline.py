@@ -323,6 +323,11 @@ def run_full_pipeline(input_path: Path, output_dir: Path, game_name: str = "", c
         char_map=char_map, game_name=game_name, input_dir=unpack_src_dir
     )
 
+    if sorted_root.exists():
+        shutil.rmtree(sorted_root)
+    if dataset_root.exists():
+        shutil.rmtree(dataset_root)
+
     out_cg = sorted_root / "CG_Events"
     out_bg = sorted_root / "Backgrounds"
     out_sprites = sorted_root / "Sprites"

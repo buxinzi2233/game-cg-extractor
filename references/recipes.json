@@ -61,26 +61,33 @@
         "character_aliases": {
           "jf": "01",
           "jiafei": "01",
+          "exotic": "01",
           "agl": "02",
           "angela": "02",
           "turkishangora": "02",
           "aj": "03",
           "ajm": "03",
           "aijimao": "03",
+          "abyssinian": "03",
           "kns": "04",
           "kenisi": "04",
+          "cornishrex": "04",
           "rb": "05",
           "rbdw": "05",
           "ribenduanwei": "05",
           "japanesebobtail": "05",
           "ze": "06",
           "zheer": "06",
+          "scottishfold": "06",
           "wm": "07",
           "wumaomao": "07",
+          "canadianhairless": "07",
           "xl": "08",
           "xianluo": "08",
+          "siamese": "08",
           "mjl": "09",
-          "mengjiala": "09"
+          "mengjiala": "09",
+          "bengal": "09"
         }
       }
     }
