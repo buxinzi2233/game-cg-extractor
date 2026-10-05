@@ -211,7 +211,7 @@ def extract_single_archive(archive_path: Path, raw_dest_dir: Path) -> tuple[int,
                         name = re.sub(r'[\\/*?:"<>|]', "_", str(name)).strip() or str(obj.path_id)
                         raw_bytes = getattr(data, "bytes", None) or getattr(data, "m_Script", b"")
                         if isinstance(raw_bytes, str):
-                            raw_bytes = raw_bytes.encode("utf-8")
+                            raw_bytes = raw_bytes.encode("utf-8", "surrogateescape")
                         if raw_bytes:
                             out_t = raw_dest_dir / name
                             if not out_t.suffix:
